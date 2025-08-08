@@ -156,6 +156,38 @@ export default function Inquiries() {
       color: '#666',
       textAlign: 'center',
     },
+    invoiceDetails: {
+      backgroundColor: '#F8F9FA',
+      padding: 12,
+      borderRadius: 8,
+      marginTop: 8,
+    },
+    invoiceItemsTitle: {
+      fontSize: 14,
+      fontWeight: 'bold',
+      color: '#5865F2',
+      marginBottom: 8,
+      textAlign: 'right',
+    },
+    invoiceItem: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 4,
+      borderBottomWidth: 1,
+      borderBottomColor: '#E0E0E0',
+    },
+    invoiceItemName: {
+      fontSize: 12,
+      color: '#333',
+      flex: 1,
+      textAlign: 'right',
+    },
+    invoiceItemQty: {
+      fontSize: 12,
+      color: '#666',
+      marginLeft: 8,
+    },
   });
 
   const inquiryItems = [
@@ -186,13 +218,6 @@ export default function Inquiries() {
       iconStyle: styles.salesIcon,
       color: '#228B22',
       type: 'sales',
-    },
-    {
-      title: 'استعلام الفواتير',
-      icon: Receipt,
-      iconStyle: styles.invoicesIcon,
-      color: '#10B981',
-      type: 'invoices',
     },
     {
       title: 'استعلام الفواتير',
@@ -332,7 +357,26 @@ export default function Inquiries() {
                   {selectedInquiry === 'customers' && `الهاتف: ${item.phone || 'غير محدد'}`}
                   {selectedInquiry === 'suppliers' && `الهاتف: ${item.phone || 'غير محدد'}`}
                   {selectedInquiry === 'sales' && `المبلغ: ${item.total || item.amount || 'غير محدد'} - العميل: ${item.customer?.nameAr || 'عميل غير مسجل'}`}
-                  {selectedInquiry === 'invoices' && `رقم الفاتورة: ${item.invoiceNumber || 'غير محدد'} - المبلغ: ${item.total || 'غير محدد'} ${settings.currencySymbol} - الحالة: ${getSaleStatusText(item.status || 'غير محدد')} - العميل: ${item.customer?.nameAr || 'عميل غير مسجل'}`}
+                  {selectedInquiry === 'invoices' && (
+                    <>
+                      {`رقم الفاتورة: ${item.invoiceNumber || 'غير محدد'} - المبلغ: ${item.total || 'غير محدد'} ${settings.currencySymbol} - الحالة: ${getSaleStatusText(item.status || 'غير محدد')} - العميل: ${item.customer?.nameAr || 'عميل غير مسجل'}`}
+                      {item.items && item.items.length > 0 && (
+                        <View style={styles.invoiceDetails}>
+                          <Text style={styles.invoiceItemsTitle}>المنتجات المشتراة:</Text>
+                          {item.items.map((saleItem: any, idx: number) => (
+                            <View key={idx} style={styles.invoiceItem}>
+                              <Text style={styles.invoiceItemQty}>
+                                {saleItem.quantity} × {saleItem.unitPrice?.toFixed(2) || '0.00'} = {saleItem.total?.toFixed(2) || '0.00'} {settings.currencySymbol}
+                              </Text>
+                              <Text style={styles.invoiceItemName}>
+                                {saleItem.product?.nameAr || saleItem.product?.name || 'منتج غير محدد'}
+                              </Text>
+                            </View>
+                          ))}
+                        </View>
+                      )}
+                    </>
+                  )}
                 </Text>
               </View>
             ))
