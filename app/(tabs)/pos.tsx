@@ -5,286 +5,239 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Image,
   Modal,
   Alert,
-  TextInput,
   Dimensions,
   Platform,
-  Image as RNImage, // Rename to avoid conflict with global Image constructor on web
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
   Search, 
   Camera, 
-  Users, 
+  Calculator, 
+  User, 
   ShoppingCart, 
   Plus, 
   Minus, 
   X, 
-  CreditCard,
-  Banknote,
-  Smartphone,
-  Clock,
-  Check,
-  Trash2,
-  Calculator,
-  Grid3x3,
-  List,
+  CreditCard, 
+  DollarSign,
   Package,
+  Users,
 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Product, Sale, SaleItem } from '@/types/global';
-import { CameraView, useCameraPermissions } from 'expo-camera';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export default function POS() {
   const { 
     theme, 
+    t, 
     language, 
     products, 
-    customers, 
+    categories, 
     cartItems, 
     selectedCustomer,
     setSelectedCustomer,
-    addToCart,
-    removeFromCart,
-    updateCartQuantity,
+    addToCart, 
+    removeFromCart, 
+    updateCartQuantity, 
     clearCart,
+    customers,
     addSale,
     settings,
-    user,
-    categories,
   } = useApp();
-
+  
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-  const [showCameraModal, setShowCameraModal] = useState(false);
+  const [discount, setDiscount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'transfer' | 'credit'>('cash');
   const [paidAmount, setPaidAmount] = useState('');
-  const [discount, setDiscount] = useState('0');
-  const [discountType, setDiscountType] = useState<'percentage' | 'amount'>('amount');
-  const [showCalculator, setShowCalculator] = useState(false);
-  const [calculatorValue, setCalculatorValue] = useState('');
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [permission, requestPermission] = useCameraPermissions();
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: '#F8FAFC',
+      backgroundColor: '#5865F2',
     },
     header: {
       backgroundColor: '#5865F2',
       paddingHorizontal: 20,
-      paddingVertical: 20,
-      borderBottomLeftRadius: 25,
-      borderBottomRightRadius: 25,
-      shadowColor: '#5865F2',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 8,
-      elevation: 8,
+      paddingVertical: 15,
+      alignItems: 'center',
     },
     headerTitle: {
-      fontSize: 28,
+      fontSize: 20,
       fontWeight: 'bold',
       color: '#FFFFFF',
       fontFamily: 'Cairo-Bold',
-      textAlign: 'center',
-      marginBottom: 15,
     },
-    searchSection: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 10,
-    },
-    searchInputContainer: {
+    content: {
       flex: 1,
-      backgroundColor: 'rgba(255, 255, 255, 0.15)',
-      borderRadius: 25,
+      backgroundColor: '#F5F5F5',
+      paddingHorizontal: 16,
+      paddingTop: 16,
+    },
+    searchContainer: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 15,
-      paddingVertical: 12,
-      borderWidth: 1,
-      borderColor: 'rgba(255, 255, 255, 0.3)',
+      marginBottom: 16,
+      gap: 12,
     },
     searchInput: {
       flex: 1,
-      color: '#FFFFFF',
-      fontSize: 16,
-      fontFamily: 'Cairo-Regular',
-      textAlign: 'right',
-      marginRight: 10,
-    },
-    searchIcon: {
-      opacity: 0.8,
-    },
-    actionButtons: {
-      flexDirection: 'row',
-      gap: 8,
     },
     actionButton: {
-      width: 45,
-      height: 45,
-      borderRadius: 22.5,
-      alignItems: 'center',
-      justifyContent: 'center',
+      backgroundColor: '#FFFFFF',
+      padding: 12,
+      borderRadius: 12,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.2,
+      shadowOpacity: 0.1,
       shadowRadius: 4,
-      elevation: 4,
+      elevation: 3,
     },
     cameraButton: {
       backgroundColor: '#10B981',
     },
-    customerButton: {
+    calculatorButton: {
       backgroundColor: '#F59E0B',
     },
-    calculatorButton: {
+    userButton: {
       backgroundColor: '#8B5CF6',
     },
     cartButton: {
       backgroundColor: '#EF4444',
     },
-    content: {
-      flex: 1,
-      flexDirection: 'column', // Always column for main content flow
-      paddingHorizontal: 16, // Keep padding for overall layout
-      paddingTop: 16,
-    },
-    // Left Panel - Products Grid
-    productGridContainer: { // Renamed from leftPanel
-      backgroundColor: '#FFFFFF',
-      borderRadius: 16,
-      padding: 16,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 3,
-      width: '100%', // Always full width on mobile
-      marginBottom: 16,
-    },
-    productPage: { // New style for each 2x2 product page
-      width: width - (16 * 2), // Screen width - content padding
-      height: 'auto', // Will adjust based on content
-      flexDirection: 'column',
-      justifyContent: 'space-between',
-      paddingHorizontal: 8, // Padding within the page
-    },
-    productRow: { // New style for each row within a product page
-      flexDirection: 'row',
-      justifyContent: 'space-around', // Distribute items evenly
-      marginBottom: 8, // Gap between rows
-    },
     categoriesContainer: {
       marginBottom: 16,
     },
-    categoriesScroll: {
+    categoryScroll: {
       flexDirection: 'row',
-      gap: 8,
+      gap: 10,
     },
-    categoryChip: {
-      backgroundColor: '#F5F5F5',
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 16,
+    categoryButton: {
+      backgroundColor: '#FFFFFF',
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 20,
       borderWidth: 1,
-      borderColor: '#E2E8F0',
+      borderColor: '#E0E0E0',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
+      elevation: 2,
     },
-    categoryChipActive: {
+    categoryButtonActive: {
       backgroundColor: '#5865F2',
       borderColor: '#5865F2',
     },
-    categoryChipText: {
-      fontSize: 12,
-      color: '#64748B',
+    categoryButtonText: {
+      fontSize: 14,
+      color: '#666',
       fontFamily: 'Cairo-Medium',
     },
-    categoryChipTextActive: {
+    categoryButtonTextActive: {
       color: '#FFFFFF',
     },
-    productsGrid: {
-      flexDirection: 'row',
-      // flexWrap: 'wrap', // Removed, as we're chunking into pages
-      // gap: 8, // Handled by productRow and productGridItem margins
+    productGridWrapper: {
+      height: 280,
+      marginBottom: 16,
     },
-    productsScrollContainer: { // New style for the horizontal ScrollView wrapping product pages
-      marginBottom: 16, // Space below the product grid
-      marginHorizontal: -16, // Counteract content padding to make it edge-to-edge
+    productsScrollContainer: {
+      flex: 1,
+    },
+    productPage: {
+      width: width - 32,
+      paddingHorizontal: 8,
+    },
+    productRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 12,
     },
     productGridItem: {
-      width: Platform.OS === 'web'
-        ? (420 - 32 - 32) / 5 // 5 columns for web (original calculation)
-        : (width - (16 * 2) - (16 * 2) - 8) / 2, // (screen width - content padding - productGridContainer padding - gap) / 2
-      aspectRatio: 1,
-      backgroundColor: '#F8FAFC',
-      borderRadius: 12,
-      padding: 8,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 1,
-      borderColor: '#E2E8F0',
-    },
-    productGridImage: {
-      width: '100%',
-      height: '60%',
-      borderRadius: 8,
-      backgroundColor: '#E2E8F0',
-      marginBottom: 4,
-    },
-    productGridName: {
-      fontSize: 10,
-      fontWeight: 'bold',
-      color: '#1E293B',
-      fontFamily: 'Cairo-Bold',
-      textAlign: 'center',
-      numberOfLines: 2,
-    },
-    productGridPrice: {
-      fontSize: 8,
-      color: '#5865F2',
-      fontFamily: 'Cairo-Medium',
-      textAlign: 'center',
-    },
-    // Inline styles for web <img> tags
-    productGridImageWeb: {
-      width: '100%', height: '60%', borderRadius: 8, backgroundColor: '#E2E8F0', marginBottom: 4,
-    },
-    // Center Panel - Cart Items
-    centerPanel: {
+      width: (width - 64) / 2,
       backgroundColor: '#FFFFFF',
-      borderRadius: 16,
-      padding: 16,
+      borderRadius: 12,
+      padding: 12,
+      alignItems: 'center',
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.1,
-      shadowRadius: 8,
+      shadowRadius: 4,
       elevation: 3,
-      width: '100%', // Always full width on mobile
+    },
+    productImage: {
+      width: 60,
+      height: 60,
+      borderRadius: 8,
+      marginBottom: 8,
+      backgroundColor: '#F5F5F5',
+    },
+    productName: {
+      fontSize: 12,
+      fontWeight: 'bold',
+      color: '#333',
+      textAlign: 'center',
+      marginBottom: 4,
+      fontFamily: 'Cairo-Bold',
+    },
+    productPrice: {
+      fontSize: 14,
+      fontWeight: 'bold',
+      color: '#5865F2',
+      textAlign: 'center',
+      marginBottom: 8,
+      fontFamily: 'Cairo-Bold',
+    },
+    addButton: {
+      backgroundColor: '#10B981',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 6,
+    },
+    addButtonText: {
+      color: '#FFFFFF',
+      fontSize: 12,
+      fontWeight: 'bold',
+      fontFamily: 'Cairo-Bold',
+    },
+    emptyProducts: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#FFFFFF',
+      borderRadius: 12,
+      margin: 8,
+    },
+    emptyText: {
+      fontSize: 16,
+      color: '#666',
+      fontFamily: 'Cairo-Regular',
+      textAlign: 'center',
+      marginTop: 8,
+    },
+    cartSection: {
       marginBottom: 16,
     },
     cartHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 16,
-      paddingBottom: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: '#E2E8F0',
+      marginBottom: 12,
     },
     cartTitle: {
-      fontSize: 18,
+      fontSize: 16,
       fontWeight: 'bold',
-      color: '#1E293B',
+      color: '#333',
       fontFamily: 'Cairo-Bold',
     },
     cartBadge: {
@@ -301,102 +254,98 @@ export default function POS() {
       fontWeight: 'bold',
       fontFamily: 'Cairo-Bold',
     },
-    cartItemsList: {
-      flex: 1,
+    cartContainer: {
+      backgroundColor: '#FFFFFF',
+      borderRadius: 12,
+      padding: 16,
+      maxHeight: 200,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
     },
     cartItem: {
-      backgroundColor: '#F8FAFC',
-      borderRadius: 12,
-      padding: 12,
-      marginBottom: 8,
-      borderWidth: 1,
-      borderColor: '#E2E8F0',
-    },
-    cartItemHeader: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 8,
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: '#F0F0F0',
+    },
+    cartItemImage: {
+      width: 40,
+      height: 40,
+      borderRadius: 6,
+      marginLeft: 12,
+      backgroundColor: '#F5F5F5',
+    },
+    cartItemInfo: {
+      flex: 1,
+      marginRight: 12,
     },
     cartItemName: {
       fontSize: 14,
       fontWeight: 'bold',
-      color: '#1E293B',
+      color: '#333',
+      marginBottom: 2,
       fontFamily: 'Cairo-Bold',
-      flex: 1,
       textAlign: 'right',
     },
     cartItemPrice: {
       fontSize: 12,
-      color: '#5865F2',
-      fontFamily: 'Cairo-Medium',
-      marginLeft: 8,
-    },
-    cartItemControls: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      color: '#666',
+      fontFamily: 'Cairo-Regular',
+      textAlign: 'right',
     },
     quantityControls: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 8,
-      backgroundColor: '#FFFFFF',
-      borderRadius: 8,
-      padding: 4,
-      borderWidth: 1,
-      borderColor: '#E2E8F0',
     },
     quantityButton: {
-      backgroundColor: '#F8FAFC',
-      borderRadius: 6,
+      backgroundColor: '#F5F5F5',
       padding: 6,
-      borderWidth: 1,
-      borderColor: '#E2E8F0',
-      minWidth: 28,
+      borderRadius: 6,
+      minWidth: 32,
       alignItems: 'center',
-      justifyContent: 'center',
     },
     quantityText: {
-      fontSize: 14,
+      fontSize: 16,
       fontWeight: 'bold',
-      color: '#1E293B',
-      minWidth: 24,
+      minWidth: 30,
       textAlign: 'center',
       fontFamily: 'Cairo-Bold',
     },
-    cartItemTotal: {
-      fontSize: 14,
-      fontWeight: 'bold',
-      color: '#10B981',
-      fontFamily: 'Cairo-Bold',
-    },
     removeButton: {
-      backgroundColor: '#FEE2E2',
-      borderColor: '#FCA5A5',
+      backgroundColor: '#EF4444',
+      padding: 6,
+      borderRadius: 6,
+      marginLeft: 8,
     },
-    // Right Panel - Summary & Checkout
-    rightPanel: {
+    emptyCart: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 40,
+    },
+    summarySection: {
+      marginBottom: 16,
+    },
+    summaryContainer: {
       backgroundColor: '#FFFFFF',
-      borderRadius: 16,
+      borderRadius: 12,
       padding: 16,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.1,
-      shadowRadius: 8,
+      shadowRadius: 4,
       elevation: 3,
-      width: '100%', // Always full width on mobile
-      marginBottom: 16,
-    },
-    summarySection: {
-      flex: 1,
     },
     summaryTitle: {
       fontSize: 16,
       fontWeight: 'bold',
-      color: '#1E293B',
-      fontFamily: 'Cairo-Bold',
+      color: '#333',
       marginBottom: 12,
+      fontFamily: 'Cairo-Bold',
       textAlign: 'center',
     },
     summaryRow: {
@@ -407,103 +356,77 @@ export default function POS() {
     },
     summaryLabel: {
       fontSize: 14,
-      color: '#64748B',
+      color: '#666',
       fontFamily: 'Cairo-Regular',
     },
     summaryValue: {
       fontSize: 14,
       fontWeight: 'bold',
-      color: '#1E293B',
+      color: '#333',
       fontFamily: 'Cairo-Bold',
     },
     totalRow: {
       borderTopWidth: 1,
-      borderTopColor: '#E2E8F0',
+      borderTopColor: '#E0E0E0',
       paddingTop: 8,
       marginTop: 8,
     },
     totalValue: {
-      fontSize: 20,
+      fontSize: 18,
       fontWeight: 'bold',
       color: '#5865F2',
       fontFamily: 'Cairo-Bold',
     },
-    customerSection: {
-      backgroundColor: '#F8FAFC',
-      borderRadius: 12,
-      padding: 12,
+    bottomActions: {
+      gap: 12,
       marginBottom: 16,
-      borderWidth: 1,
-      borderColor: '#E2E8F0',
     },
-    customerLabel: {
-      fontSize: 12,
-      color: '#64748B',
-      fontFamily: 'Cairo-Regular',
-      marginBottom: 4,
-    },
-    customerName: {
-      fontSize: 14,
-      fontWeight: 'bold',
-      color: '#1E293B',
-      fontFamily: 'Cairo-Bold',
-      textAlign: 'right',
-    },
-    customerPhone: {
-      fontSize: 12,
-      color: '#64748B',
-      fontFamily: 'Cairo-Regular',
-      textAlign: 'right',
-    },
-    selectCustomerButton: {
-      backgroundColor: '#5865F2',
-      borderRadius: 8,
-      paddingVertical: 8,
-      paddingHorizontal: 12,
+    customerSelectButton: {
+      backgroundColor: '#FFFFFF',
+      borderRadius: 12,
+      padding: 16,
+      flexDirection: 'row',
       alignItems: 'center',
+      justifyContent: 'space-between',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
     },
-    selectCustomerText: {
-      color: '#FFFFFF',
-      fontSize: 12,
-      fontWeight: 'bold',
-      fontFamily: 'Cairo-Bold',
+    customerInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    customerText: {
+      fontSize: 16,
+      color: '#333',
+      fontFamily: 'Cairo-Medium',
     },
     checkoutButton: {
-      backgroundColor: '#5865F2',
+      backgroundColor: '#10B981',
       borderRadius: 12,
-      paddingVertical: 14,
+      padding: 16,
       alignItems: 'center',
-      flexDirection: 'row',
-      justifyContent: 'center',
-      gap: 8,
-      shadowColor: '#5865F2',
+      shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.3,
+      shadowOpacity: 0.1,
       shadowRadius: 4,
-      elevation: 4,
-      marginTop: 16,
-      marginBottom: 8,
+      elevation: 3,
+    },
+    checkoutButtonDisabled: {
+      backgroundColor: '#E0E0E0',
     },
     checkoutButtonText: {
-      color: '#FFFFFF',
-      fontSize: 16,
+      fontSize: 18,
       fontWeight: 'bold',
+      color: '#FFFFFF',
       fontFamily: 'Cairo-Bold',
     },
-    emptyCart: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      opacity: 0.5,
+    checkoutButtonTextDisabled: {
+      color: '#999',
     },
-    emptyCartText: {
-      fontSize: 16,
-      color: '#64748B',
-      fontFamily: 'Cairo-Regular',
-      textAlign: 'center',
-      marginTop: 12,
-    },
-    // Modal Styles
     modalOverlay: {
       flex: 1,
       backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -512,7 +435,7 @@ export default function POS() {
     },
     modalContent: {
       backgroundColor: '#FFFFFF',
-      borderRadius: 20,
+      borderRadius: 16,
       padding: 24,
       width: '90%',
       maxWidth: 400,
@@ -527,52 +450,70 @@ export default function POS() {
     modalTitle: {
       fontSize: 20,
       fontWeight: 'bold',
-      color: '#1E293B',
+      color: '#333',
       fontFamily: 'Cairo-Bold',
     },
     closeButton: {
       padding: 4,
     },
-    customerList: {
-      maxHeight: 300,
-    },
     customerItem: {
-      backgroundColor: '#F8FAFC',
-      borderRadius: 12,
+      backgroundColor: '#F8F9FA',
       padding: 16,
+      borderRadius: 12,
       marginBottom: 12,
       borderWidth: 1,
-      borderColor: '#E2E8F0',
+      borderColor: '#E0E0E0',
     },
-    paymentMethods: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 12,
-      marginBottom: 16,
-    },
-    paymentMethod: {
-      flex: 1,
-      minWidth: '45%',
-      backgroundColor: '#F8FAFC',
-      borderRadius: 12,
-      padding: 16,
-      alignItems: 'center',
-      borderWidth: 2,
-      borderColor: '#E2E8F0',
-    },
-    paymentMethodActive: {
-      backgroundColor: '#EEF2FF',
+    customerItemSelected: {
+      backgroundColor: '#5865F2',
       borderColor: '#5865F2',
     },
-    paymentMethodText: {
-      fontSize: 14,
-      color: '#64748B',
-      marginTop: 8,
-      fontFamily: 'Cairo-Medium',
-    },
-    paymentMethodTextActive: {
-      color: '#5865F2',
+    customerName: {
+      fontSize: 16,
       fontWeight: 'bold',
+      marginBottom: 4,
+      fontFamily: 'Cairo-Bold',
+      textAlign: 'right',
+    },
+    customerNameSelected: {
+      color: '#FFFFFF',
+    },
+    customerPhone: {
+      fontSize: 14,
+      color: '#666',
+      fontFamily: 'Cairo-Regular',
+      textAlign: 'right',
+    },
+    customerPhoneSelected: {
+      color: 'rgba(255, 255, 255, 0.8)',
+    },
+    paymentMethodSelector: {
+      flexDirection: 'row',
+      gap: 8,
+      marginBottom: 16,
+    },
+    paymentMethodButton: {
+      flex: 1,
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: '#E0E0E0',
+      alignItems: 'center',
+      backgroundColor: '#F8F9FA',
+    },
+    paymentMethodButtonActive: {
+      backgroundColor: '#5865F2',
+      borderColor: '#5865F2',
+    },
+    paymentMethodButtonText: {
+      fontSize: 14,
+      fontWeight: '500',
+      fontFamily: 'Cairo-Medium',
+      color: '#333',
+    },
+    paymentMethodButtonTextActive: {
+      color: '#FFFFFF',
     },
     modalButtons: {
       flexDirection: 'row',
@@ -582,246 +523,114 @@ export default function POS() {
     modalButton: {
       flex: 1,
     },
-    checkoutModalContent: {
-      backgroundColor: '#FFFFFF',
-      borderRadius: 20,
-      padding: 24,
-      width: '90%',
-      maxWidth: 400,
-      maxHeight: '90%',
-    },
-    checkoutSummary: {
-      backgroundColor: '#F8FAFC',
-      padding: 16,
-      borderRadius: 16,
-      marginBottom: 20,
-      borderWidth: 1,
-      borderColor: '#E2E8F0',
-    },
-    checkoutSummaryTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#1E293B',
-      textAlign: 'center',
-      marginBottom: 12,
-      fontFamily: 'Cairo-Bold',
-    },
-    checkoutSummaryRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: 8,
-    },
-    checkoutSummaryLabel: {
-      fontSize: 14,
-      color: '#64748B',
-      fontFamily: 'Cairo-Regular',
-    },
-    checkoutSummaryValue: {
-      fontSize: 14,
-      fontWeight: 'bold',
-      color: '#1E293B',
-      fontFamily: 'Cairo-Bold',
-    },
-    checkoutTotalRow: {
-      borderTopWidth: 1,
-      borderTopColor: '#E2E8F0',
-      paddingTop: 8,
-      marginTop: 8,
-    },
-    checkoutTotalValue: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      color: '#5865F2',
-      fontFamily: 'Cairo-Bold',
-    },
-    paymentMethodsTitle: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: '#1E293B',
-      marginBottom: 12,
-      textAlign: 'right',
-      fontFamily: 'Cairo-Bold',
-    },
-    paidAmountContainer: {
-      marginBottom: 16,
-    },
-    changeContainer: {
-      backgroundColor: '#ECFDF5',
-      padding: 12,
-      borderRadius: 12,
-      marginBottom: 16,
-      borderWidth: 1,
-      borderColor: '#A7F3D0',
-    },
-    changeText: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: '#10B981',
-      textAlign: 'center',
-      fontFamily: 'Cairo-Bold',
-    },
-    checkoutButtons: {
-      flexDirection: 'row',
-      gap: 12,
-      marginTop: 20,
-    },
-    checkoutButton2: {
-      flex: 1,
-    },
-    calculatorModal: {
-      backgroundColor: '#FFFFFF',
-      borderRadius: 20,
-      padding: 24,
-      width: '90%',
-      maxWidth: 300,
-    },
-    calculatorDisplay: {
-      backgroundColor: '#F8FAFC',
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 16,
-      alignItems: 'flex-end',
-    },
-    calculatorValue: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      color: '#1E293B',
-      fontFamily: 'Cairo-Bold',
-    },
-    calculatorGrid: {
-      gap: 8,
-    },
-    calculatorRow: {
-      flexDirection: 'row',
-      gap: 8,
-    },
-    calculatorButton: {
-      flex: 1,
-      aspectRatio: 1,
-      backgroundColor: '#F8FAFC',
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 1,
-      borderColor: '#E2E8F0',
-    },
-    calculatorButtonText: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#1E293B',
-      fontFamily: 'Cairo-Bold',
-    },
-    operatorButton: {
-      backgroundColor: '#5865F2',
-    },
-    operatorButtonText: {
-      color: '#FFFFFF',
-    },
-    discountTypeSelector: {
-      flexDirection: 'row',
-      marginBottom: 16,
-      backgroundColor: '#F5F5F5',
-      borderRadius: 8,
-      padding: 4,
-    },
-    discountTypeButton: {
-      flex: 1,
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-      borderRadius: 6,
-      alignItems: 'center',
-    },
-    discountTypeButtonActive: {
-      backgroundColor: '#5865F2',
-    },
-    discountTypeButtonText: {
-      fontSize: 14,
-      fontWeight: '500',
-      fontFamily: 'Cairo-Medium',
-    },
-    discountTypeButtonTextActive: {
-      color: '#FFFFFF',
-    },
-    discountTypeButtonTextInactive: {
-      color: '#666',
-    },
   });
 
-  // Filter products based on search and category
   const filteredProducts = products.filter(product => {
     const searchLower = searchQuery.toLowerCase();
     const matchesSearch = product.nameAr.toLowerCase().includes(searchLower) ||
            product.name.toLowerCase().includes(searchLower) ||
-           product.barcode.includes(searchQuery);
+           product.barcode.includes(searchLower);
     
     const matchesCategory = selectedCategory === 'all' || product.categoryId === selectedCategory;
     
     return matchesSearch && matchesCategory;
   });
 
-  // Calculate cart totals
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-  const discountAmount = discountType === 'percentage' 
-    ? (subtotal * parseFloat(discount || '0')) / 100
-    : parseFloat(discount || '0');
-  const taxableAmount = subtotal - discountAmount;
+  const cartTotal = cartItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+  const cartItemsCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const discountAmount = (cartTotal * discount) / 100;
+  const taxableAmount = cartTotal - discountAmount;
   const taxAmount = (taxableAmount * settings.taxRate) / 100;
-  const total = taxableAmount + taxAmount;
-  const paidAmountNum = parseFloat(paidAmount || '0');
-  const remainingAmount = Math.max(0, total - paidAmountNum);
-  const changeAmount = Math.max(0, paidAmountNum - total);
+  const finalTotal = taxableAmount + taxAmount;
 
-  // Play sound when adding to cart
-  const playAddToCartSound = () => {
-    if (soundEnabled && Platform.OS === 'web') {
-      // Create a simple beep sound for web
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.frequency.value = 800;
-      oscillator.type = 'sine';
-      
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-      
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.1);
+  const renderProductPages = () => {
+    if (filteredProducts.length === 0) {
+      return (
+        <View style={styles.emptyProducts}>
+          <Package size={48} color="#999" />
+          <Text style={styles.emptyText}>لا توجد منتجات</Text>
+        </View>
+      );
     }
-  };
 
-  // Helper to chunk array for 2x2 grid display
-  const chunkArray = (arr, size) => {
-    const chunkedArr = [];
-    for (let i = 0; i < arr.length; i += size) {
-      chunkedArr.push(arr.slice(i, i + size));
+    const pages = [];
+    for (let i = 0; i < filteredProducts.length; i += 4) {
+      const pageProducts = filteredProducts.slice(i, i + 4);
+      
+      pages.push(
+        <View key={i} style={styles.productPage}>
+          {/* First row */}
+          <View style={styles.productRow}>
+            {pageProducts.slice(0, 2).map((product, index) => (
+              <TouchableOpacity
+                key={product.id}
+                style={styles.productGridItem}
+                onPress={() => addToCart(product)}
+                activeOpacity={0.7}
+              >
+                {product.image ? (
+                  <Image source={{ uri: product.image }} style={styles.productImage} />
+                ) : (
+                  <View style={styles.productImage}>
+                    <Package size={24} color="#999" />
+                  </View>
+                )}
+                <Text style={styles.productName} numberOfLines={2}>
+                  {product.nameAr}
+                </Text>
+                <Text style={styles.productPrice}>
+                  {product.price.toFixed(2)} {settings.currencySymbol}
+                </Text>
+                <TouchableOpacity style={styles.addButton}>
+                  <Text style={styles.addButtonText}>إضافة</Text>
+                </TouchableOpacity>
+              </TouchableOpacity>
+            ))}
+            {/* Fill empty space if only one product in first row */}
+            {pageProducts.length === 1 && (
+              <View style={[styles.productGridItem, { opacity: 0 }]} />
+            )}
+          </View>
+          
+          {/* Second row */}
+          {pageProducts.length > 2 && (
+            <View style={styles.productRow}>
+              {pageProducts.slice(2, 4).map((product, index) => (
+                <TouchableOpacity
+                  key={product.id}
+                  style={styles.productGridItem}
+                  onPress={() => addToCart(product)}
+                  activeOpacity={0.7}
+                >
+                  {product.image ? (
+                    <Image source={{ uri: product.image }} style={styles.productImage} />
+                  ) : (
+                    <View style={styles.productImage}>
+                      <Package size={24} color="#999" />
+                    </View>
+                  )}
+                  <Text style={styles.productName} numberOfLines={2}>
+                    {product.nameAr}
+                  </Text>
+                  <Text style={styles.productPrice}>
+                    {product.price.toFixed(2)} {settings.currencySymbol}
+                  </Text>
+                  <TouchableOpacity style={styles.addButton}>
+                    <Text style={styles.addButtonText}>إضافة</Text>
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              ))}
+              {/* Fill empty space if only one product in second row */}
+              {pageProducts.length === 3 && (
+                <View style={[styles.productGridItem, { opacity: 0 }]} />
+              )}
+            </View>
+          )}
+        </View>
+      );
     }
-    return chunkedArr;
-  };
-  const handleBarcodeSearch = (barcode: string) => {
-    const product = products.find(p => 
-      p.barcode === barcode || 
-      p.nameAr.toLowerCase().includes(barcode.toLowerCase()) ||
-      p.name.toLowerCase().includes(barcode.toLowerCase())
-    );
-    if (product) {
-      addToCart(product);
-      playAddToCartSound();
-      setSearchQuery('');
-      Alert.alert('تم الإضافة', `تم إضافة ${product.nameAr} للسلة`);
-    } else {
-      Alert.alert('خطأ', 'المنتج غير موجود');
-    }
-  };
-
-  const handleCameraBarcodeScan = (data: any) => {
-    if (data && data.data) {
-      handleBarcodeSearch(data.data);
-      setShowCameraModal(false);
-    }
+    
+    return pages;
   };
 
   const handleCheckout = () => {
@@ -829,13 +638,13 @@ export default function POS() {
       Alert.alert('خطأ', 'السلة فارغة');
       return;
     }
+    setShowCheckoutModal(true);
+  };
 
-    if (paymentMethod === 'credit' && !selectedCustomer) {
-      Alert.alert('خطأ', 'يجب اختيار عميل للبيع الآجل');
-      return;
-    }
-
-    if (paymentMethod !== 'credit' && paidAmountNum < total) {
+  const handleCompleteSale = () => {
+    const paidAmountNum = parseFloat(paidAmount) || 0;
+    
+    if (paymentMethod !== 'credit' && paidAmountNum < finalTotal) {
       Alert.alert('خطأ', 'المبلغ المدفوع أقل من المطلوب');
       return;
     }
@@ -853,148 +662,74 @@ export default function POS() {
       invoiceNumber: `${settings.invoicePrefix}-${settings.nextInvoiceNumber.toString().padStart(4, '0')}`,
       date: new Date(),
       customerId: selectedCustomer?.id,
-      customer: selectedCustomer || undefined,
+      customer: selectedCustomer,
       items: saleItems,
-      subtotal,
+      subtotal: cartTotal,
       discount: discountAmount,
       tax: taxAmount,
-      total,
+      total: finalTotal,
       paidAmount: paymentMethod === 'credit' ? 0 : paidAmountNum,
-      remainingAmount: paymentMethod === 'credit' ? total : remainingAmount,
+      remainingAmount: paymentMethod === 'credit' ? finalTotal : Math.max(0, finalTotal - paidAmountNum),
       paymentMethod,
-      cashierId: user!.id,
-      cashier: user!,
+      cashierId: '1',
+      cashier: { id: '1', name: 'Admin', email: 'admin@micropos.com', role: 'admin' },
       status: 'completed',
     };
 
     addSale(sale);
     clearCart();
-    setSearchQuery('');
+    setDiscount(0);
     setPaidAmount('');
-    setDiscount('0');
+    setPaymentMethod('cash');
     setShowCheckoutModal(false);
     
-    Alert.alert('نجح', `تم حفظ الفاتورة ${sale.invoiceNumber} بنجاح`);
+    Alert.alert('نجح', `تم إتمام البيع بنجاح\nرقم الفاتورة: ${sale.invoiceNumber}`);
   };
-
-  const openCamera = async () => {
-    if (Platform.OS === 'web') {
-      Alert.alert('تنبيه', 'الكاميرا غير متاحة في المتصفح. يرجى إدخال الباركود يدوياً');
-      return;
-    }
-
-    if (!permission) {
-      const { status } = await requestPermission();
-      if (status !== 'granted') {
-        Alert.alert('خطأ', 'يجب السماح بالوصول للكاميرا');
-        return;
-      }
-    }
-
-    if (!permission.granted) {
-      const { status } = await requestPermission();
-      if (status !== 'granted') {
-        Alert.alert('خطأ', 'يجب السماح بالوصول للكاميرا');
-        return;
-      }
-    }
-
-    setShowCameraModal(true);
-  };
-
-  const handleCalculatorPress = (value: string) => {
-    if (value === 'C') {
-      setCalculatorValue('');
-    } else if (value === '=') {
-      try {
-        const result = eval(calculatorValue);
-        setCalculatorValue(result.toString());
-      } catch (error) {
-        setCalculatorValue('خطأ');
-      }
-    } else if (value === '⌫') {
-      setCalculatorValue(prev => prev.slice(0, -1));
-    } else {
-      setCalculatorValue(prev => prev + value);
-    }
-  };
-
-  const calculatorButtons = [
-    ['C', '⌫', '/', '×'],
-    ['7', '8', '9', '-'],
-    ['4', '5', '6', '+'],
-    ['1', '2', '3', '='],
-    ['0', '.', '', ''],
-  ];
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>المبيعات</Text>
-        <View style={styles.searchSection}>
-          <View style={styles.searchInputContainer}>
-            <Search size={20} color="rgba(255, 255, 255, 0.8)" style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="ابحث عن منتج أو أدخل الباركود..."
-              placeholderTextColor="rgba(255, 255, 255, 0.7)"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onSubmitEditing={() => {
-                if (searchQuery) {
-                  handleBarcodeSearch(searchQuery);
-                }
-              }}
-              returnKeyType="search"
-            />
-          </View>
-          <View style={styles.actionButtons}>
-            <TouchableOpacity
-              style={[styles.actionButton, styles.cameraButton]}
-              onPress={openCamera}
-            >
-              <Camera size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[styles.actionButton, styles.customerButton]}
-              onPress={() => setShowCustomerModal(true)}
-            >
-              <Users size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[styles.actionButton, styles.calculatorButton]}
-              onPress={() => setShowCalculator(true)}
-            >
-              <Calculator size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[styles.actionButton, styles.cartButton]}
-              onPress={clearCart}
-            >
-              <Trash2 size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
-        </View>
       </View>
 
-      <View style={styles.content}>
-        {/* Categories (Moved to top of content) */}
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Search and Action Buttons */}
+        <View style={styles.searchContainer}>
+          <Input
+            style={styles.searchInput}
+            placeholder="ابحث عن منتج أو أدخل الباركود..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            icon={<Search size={20} color="#666" />}
+          />
+          <TouchableOpacity style={[styles.actionButton, styles.cameraButton]}>
+            <Camera size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.actionButton, styles.calculatorButton]}>
+            <Calculator size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.actionButton, styles.userButton]}>
+            <User size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.actionButton, styles.cartButton]}>
+            <ShoppingCart size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Categories */}
         <View style={styles.categoriesContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScroll}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
             <TouchableOpacity
               style={[
-                styles.categoryChip,
-                selectedCategory === 'all' && styles.categoryChipActive,
+                styles.categoryButton,
+                selectedCategory === 'all' && styles.categoryButtonActive,
               ]}
               onPress={() => setSelectedCategory('all')}
             >
               <Text
                 style={[
-                  styles.categoryChipText,
-                  selectedCategory === 'all' && styles.categoryChipTextActive,
+                  styles.categoryButtonText,
+                  selectedCategory === 'all' && styles.categoryButtonTextActive,
                 ]}
               >
                 الكل
@@ -1004,15 +739,15 @@ export default function POS() {
               <TouchableOpacity
                 key={category.id}
                 style={[
-                  styles.categoryChip,
-                  selectedCategory === category.id && styles.categoryChipActive,
+                  styles.categoryButton,
+                  selectedCategory === category.id && styles.categoryButtonActive,
                 ]}
                 onPress={() => setSelectedCategory(category.id)}
               >
                 <Text
                   style={[
-                    styles.categoryChipText,
-                    selectedCategory === category.id && styles.categoryChipTextActive,
+                    styles.categoryButtonText,
+                    selectedCategory === category.id && styles.categoryButtonTextActive,
                   ]}
                 >
                   {category.nameAr}
@@ -1022,242 +757,146 @@ export default function POS() {
           </ScrollView>
         </View>
 
-        {/* Products Grid (Now horizontally scrollable 2x2 pages) */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.productsScrollContainer}>
-          {chunkArray(filteredProducts, 4).map((page, pageIndex) => (
-            <View key={pageIndex} style={styles.productPage}>
-              <View style={styles.productRow}>
-                {page[0] && (
-                  <TouchableOpacity
-                    key={page[0].id}
-                    style={styles.productGridItem}
-                    onPress={() => {
-                      addToCart(page[0]);
-                      playAddToCartSound();
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    {page[0].image ? (
-                      Platform.OS === 'web' ? (
-                        <img src={page[0].image} style={styles.productGridImageWeb} />
-                      ) : (
-                        <RNImage source={{ uri: page[0].image }} style={styles.productGridImage} />
-                      )
-                    ) : (
-                      <View style={styles.productGridImage} />
-                    )}
-                    <Text style={styles.productGridName} numberOfLines={2}>
-                      {page[0].nameAr}
-                    </Text>
-                    <Text style={styles.productGridPrice}>
-                      {page[0].price.toFixed(2)}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-                {page[1] && (
-                  <TouchableOpacity
-                    key={page[1].id}
-                    style={styles.productGridItem}
-                    onPress={() => {
-                      addToCart(page[1]);
-                      playAddToCartSound();
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    {page[1].image ? (
-                      Platform.OS === 'web' ? (
-                        <img src={page[1].image} style={styles.productGridImageWeb} />
-                      ) : (
-                        <RNImage source={{ uri: page[1].image }} style={styles.productGridImage} />
-                      )
-                    ) : (
-                      <View style={styles.productGridImage} />
-                    )}
-                    <Text style={styles.productGridName} numberOfLines={2}>
-                      {page[1].nameAr}
-                    </Text>
-                    <Text style={styles.productGridPrice}>
-                      {page[1].price.toFixed(2)}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-              <View style={styles.productRow}>
-                {page[2] && (
-                  <TouchableOpacity
-                    key={page[2].id}
-                    style={styles.productGridItem}
-                    onPress={() => {
-                      addToCart(page[2]);
-                      playAddToCartSound();
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    {page[2].image ? (
-                      Platform.OS === 'web' ? (
-                        <img src={page[2].image} style={styles.productGridImageWeb} />
-                      ) : (
-                        <RNImage source={{ uri: page[2].image }} style={styles.productGridImage} />
-                      )
-                    ) : (
-                      <View style={styles.productGridImage} />
-                    )}
-                    <Text style={styles.productGridName} numberOfLines={2}>
-                      {page[2].nameAr}
-                    </Text>
-                    <Text style={styles.productGridPrice}>
-                      {page[2].price.toFixed(2)}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-                {page[3] && (
-                  <TouchableOpacity
-                    key={page[3].id}
-                    style={styles.productGridItem}
-                    onPress={() => {
-                      addToCart(page[3]);
-                      playAddToCartSound();
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    {page[3].image ? (
-                      Platform.OS === 'web' ? (
-                        <img src={page[3].image} style={styles.productGridImageWeb} />
-                      ) : (
-                        <RNImage source={{ uri: page[3].image }} style={styles.productGridImage} />
-                      )
-                    ) : (
-                      <View style={styles.productGridImage} />
-                    )}
-                    <Text style={styles.productGridName} numberOfLines={2}>
-                      {page[3].nameAr}
-                    </Text>
-                    <Text style={styles.productGridPrice}>
-                      {page[3].price.toFixed(2)}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
-          ))}
-        </ScrollView>
+        {/* Products Grid (2x2 with horizontal scroll) */}
+        <View style={styles.productGridWrapper}>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            style={styles.productsScrollContainer}
+            pagingEnabled
+          >
+            {renderProductPages()}
+          </ScrollView>
+        </View>
 
-        {/* Center Panel - Cart Items */}
-        <View style={styles.centerPanel}>
+        {/* Cart Items */}
+        <View style={styles.cartSection}>
           <View style={styles.cartHeader}>
             <Text style={styles.cartTitle}>قائمة المنتجات المضافة إلى سلة البيع</Text>
             <View style={styles.cartBadge}>
-              <Text style={styles.cartBadgeText}>{cartItems.length}</Text>
+              <Text style={styles.cartBadgeText}>{cartItemsCount}</Text>
             </View>
           </View>
-
-          {cartItems.length === 0 ? (
-            <View style={styles.emptyCart}>
-              <ShoppingCart size={64} color="#CBD5E1" />
-              <Text style={styles.emptyCartText}>السلة فارغة</Text>
-            </View>
-          ) : (
-            <ScrollView style={styles.cartItemsList} showsVerticalScrollIndicator={false}>
-              {cartItems.map((item) => (
-                <View key={item.product.id} style={styles.cartItem}>
-                  <View style={styles.cartItemHeader}>
-                    <Text style={styles.cartItemName} numberOfLines={1}>
-                      {item.product.nameAr}
-                    </Text>
-                    <Text style={styles.cartItemPrice}>
-                      {item.product.price.toFixed(2)} {settings.currencySymbol}
-                    </Text>
-                  </View>
-                  
-                  <View style={styles.cartItemControls}>
-                    <Text style={styles.cartItemTotal}>
-                      {(item.product.price * item.quantity).toFixed(2)} {settings.currencySymbol}
-                    </Text>
+          
+          <View style={styles.cartContainer}>
+            {cartItems.length === 0 ? (
+              <View style={styles.emptyCart}>
+                <ShoppingCart size={48} color="#999" />
+                <Text style={styles.emptyText}>السلة فارغة</Text>
+              </View>
+            ) : (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {cartItems.map((item) => (
+                  <View key={item.product.id} style={styles.cartItem}>
+                    <TouchableOpacity
+                      style={styles.removeButton}
+                      onPress={() => removeFromCart(item.product.id)}
+                    >
+                      <X size={16} color="#FFFFFF" />
+                    </TouchableOpacity>
                     
                     <View style={styles.quantityControls}>
                       <TouchableOpacity
                         style={styles.quantityButton}
                         onPress={() => updateCartQuantity(item.product.id, item.quantity - 1)}
                       >
-                        <Minus size={12} color="#64748B" />
+                        <Minus size={16} color="#666" />
                       </TouchableOpacity>
                       <Text style={styles.quantityText}>{item.quantity}</Text>
                       <TouchableOpacity
                         style={styles.quantityButton}
                         onPress={() => updateCartQuantity(item.product.id, item.quantity + 1)}
                       >
-                        <Plus size={12} color="#64748B" />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.quantityButton, styles.removeButton]}
-                        onPress={() => removeFromCart(item.product.id)}
-                      >
-                        <X size={12} color="#EF4444" />
+                        <Plus size={16} color="#666" />
                       </TouchableOpacity>
                     </View>
-                  </View>
-                </View>
-              ))}
-            </ScrollView>
-          )}
-        </View>
 
-        {/* Right Panel - Summary & Checkout */}
-        <View style={styles.rightPanel}>
-          {/* Customer Section */}
-          <View style={styles.customerSection}>
-            <Text style={styles.customerLabel}>العميل</Text>
-            {selectedCustomer ? (
-              <View>
-                <Text style={styles.customerName}>{selectedCustomer.nameAr}</Text>
-                <Text style={styles.customerPhone}>{selectedCustomer.phone}</Text>
-              </View>
-            ) : (
-              <TouchableOpacity
-                style={styles.selectCustomerButton}
-                onPress={() => setShowCustomerModal(true)}
-              >
-                <Text style={styles.selectCustomerText}>اختيار عميل</Text>
-              </TouchableOpacity>
+                    <View style={styles.cartItemInfo}>
+                      <Text style={styles.cartItemName} numberOfLines={1}>
+                        {item.product.nameAr}
+                      </Text>
+                      <Text style={styles.cartItemPrice}>
+                        {item.product.price.toFixed(2)} × {item.quantity} = {(item.product.price * item.quantity).toFixed(2)} {settings.currencySymbol}
+                      </Text>
+                    </View>
+
+                    {item.product.image ? (
+                      <Image source={{ uri: item.product.image }} style={styles.cartItemImage} />
+                    ) : (
+                      <View style={styles.cartItemImage}>
+                        <Package size={20} color="#999" />
+                      </View>
+                    )}
+                  </View>
+                ))}
+              </ScrollView>
             )}
           </View>
+        </View>
 
-          {/* Summary Section */}
-          <View style={styles.summarySection}>
+        {/* Summary */}
+        <View style={styles.summarySection}>
+          <View style={styles.summaryContainer}>
             <Text style={styles.summaryTitle}>ملخص الفاتورة</Text>
             
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryValue}>{subtotal.toFixed(2)} {settings.currencySymbol}</Text>
-              <Text style={styles.summaryLabel}>المجموع الفرعي</Text>
+              <Text style={styles.summaryValue}>{cartTotal.toFixed(2)} {settings.currencySymbol}</Text>
+              <Text style={styles.summaryLabel}>المجموع الفرعي:</Text>
             </View>
             
             <View style={styles.summaryRow}>
               <Text style={styles.summaryValue}>{discountAmount.toFixed(2)} {settings.currencySymbol}</Text>
-              <Text style={styles.summaryLabel}>الخصم ({discount}%)</Text>
+              <Text style={styles.summaryLabel}>الخصم ({discount}%):</Text>
             </View>
             
             <View style={styles.summaryRow}>
               <Text style={styles.summaryValue}>{taxAmount.toFixed(2)} {settings.currencySymbol}</Text>
-              <Text style={styles.summaryLabel}>الضريبة ({settings.taxRate}%)</Text>
+              <Text style={styles.summaryLabel}>الضريبة ({settings.taxRate}%):</Text>
             </View>
             
             <View style={[styles.summaryRow, styles.totalRow]}>
-              <Text style={styles.totalValue}>{total.toFixed(2)} {settings.currencySymbol}</Text>
-              <Text style={[styles.summaryLabel, { fontWeight: 'bold' }]}>الإجمالي</Text>
+              <Text style={styles.totalValue}>{finalTotal.toFixed(2)} {settings.currencySymbol}</Text>
+              <Text style={[styles.summaryLabel, { fontWeight: 'bold' }]}>الإجمالي:</Text>
             </View>
           </View>
+        </View>
+
+        {/* Bottom Actions */}
+        <View style={styles.bottomActions}>
+          {/* Customer Selection */}
+          <TouchableOpacity
+            style={styles.customerSelectButton}
+            onPress={() => setShowCustomerModal(true)}
+          >
+            <View style={styles.customerInfo}>
+              <Users size={20} color="#5865F2" />
+              <Text style={styles.customerText}>
+                {selectedCustomer ? selectedCustomer.nameAr : 'اختيار العميل'}
+              </Text>
+            </View>
+            <Text style={{ color: '#999', fontSize: 14 }}>اختياري</Text>
+          </TouchableOpacity>
 
           {/* Checkout Button */}
           <TouchableOpacity
-            style={[styles.checkoutButton, { opacity: cartItems.length === 0 ? 0.5 : 1 }]}
-            onPress={() => setShowCheckoutModal(true)}
+            style={[
+              styles.checkoutButton,
+              cartItems.length === 0 && styles.checkoutButtonDisabled,
+            ]}
+            onPress={handleCheckout}
             disabled={cartItems.length === 0}
           >
-            <ShoppingCart size={18} color="#FFFFFF" />
-            <Text style={styles.checkoutButtonText}>الدفع</Text>
+            <Text
+              style={[
+                styles.checkoutButtonText,
+                cartItems.length === 0 && styles.checkoutButtonTextDisabled,
+              ]}
+            >
+              الدفع ({finalTotal.toFixed(2)} {settings.currencySymbol})
+            </Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
 
       {/* Customer Selection Modal */}
       <Modal visible={showCustomerModal} transparent animationType="fade">
@@ -1269,37 +908,68 @@ export default function POS() {
                 style={styles.closeButton}
                 onPress={() => setShowCustomerModal(false)}
               >
-                <X size={24} color="#64748B" />
+                <X size={24} color="#666" />
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity
-              style={[styles.customerItem, { backgroundColor: selectedCustomer ? '#F8FAFC' : '#EEF2FF' }]}
-              onPress={() => {
-                setSelectedCustomer(null);
-                setShowCustomerModal(false);
-              }}
-            >
-              <Text style={[styles.customerName, { color: selectedCustomer ? '#64748B' : '#5865F2' }]}>
-                عميل غير مسجل
-              </Text>
-            </TouchableOpacity>
+            <ScrollView style={{ maxHeight: 400 }}>
+              <TouchableOpacity
+                style={[
+                  styles.customerItem,
+                  !selectedCustomer && styles.customerItemSelected,
+                ]}
+                onPress={() => {
+                  setSelectedCustomer(null);
+                  setShowCustomerModal(false);
+                }}
+              >
+                <Text style={[
+                  styles.customerName,
+                  !selectedCustomer && styles.customerNameSelected,
+                ]}>
+                  عميل غير مسجل
+                </Text>
+                <Text style={[
+                  styles.customerPhone,
+                  !selectedCustomer && styles.customerPhoneSelected,
+                ]}>
+                  بيع مباشر بدون تسجيل العميل
+                </Text>
+              </TouchableOpacity>
 
-            <ScrollView style={styles.customerList}>
               {customers.map((customer) => (
                 <TouchableOpacity
                   key={customer.id}
                   style={[
                     styles.customerItem,
-                    selectedCustomer?.id === customer.id && { backgroundColor: '#EEF2FF' }
+                    selectedCustomer?.id === customer.id && styles.customerItemSelected,
                   ]}
                   onPress={() => {
                     setSelectedCustomer(customer);
                     setShowCustomerModal(false);
                   }}
                 >
-                  <Text style={styles.customerName}>{customer.nameAr}</Text>
-                  <Text style={styles.customerPhone}>{customer.phone}</Text>
+                  <Text style={[
+                    styles.customerName,
+                    selectedCustomer?.id === customer.id && styles.customerNameSelected,
+                  ]}>
+                    {customer.nameAr}
+                  </Text>
+                  <Text style={[
+                    styles.customerPhone,
+                    selectedCustomer?.id === customer.id && styles.customerPhoneSelected,
+                  ]}>
+                    {customer.phone}
+                  </Text>
+                  {customer.currentBalance > 0 && (
+                    <Text style={[
+                      styles.customerPhone,
+                      selectedCustomer?.id === customer.id && styles.customerPhoneSelected,
+                      { color: '#EF4444', fontWeight: 'bold' }
+                    ]}>
+                      ذمة: {customer.currentBalance.toFixed(2)} {settings.currencySymbol}
+                    </Text>
+                  )}
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -1310,312 +980,161 @@ export default function POS() {
       {/* Checkout Modal */}
       <Modal visible={showCheckoutModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <ScrollView contentContainerStyle={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <View style={styles.checkoutModalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>تأكيد الدفع</Text>
-                <TouchableOpacity
-                  style={{ padding: 8, borderRadius: 8, backgroundColor: soundEnabled ? '#10B981' : '#EF4444' }}
-                  onPress={() => setSoundEnabled(!soundEnabled)}
-                >
-                  <Text style={{ color: '#FFFFFF', fontSize: 12, fontFamily: 'Cairo-Bold' }}>
-                    {soundEnabled ? '🔊' : '🔇'}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.closeButton}
-                  onPress={() => setShowCheckoutModal(false)}
-                >
-                  <X size={24} color="#64748B" />
-                </TouchableOpacity>
-              </View>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>إتمام البيع</Text>
+              <TouchableOpacity 
+                style={styles.closeButton}
+                onPress={() => setShowCheckoutModal(false)}
+              >
+                <X size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
 
-              <View style={styles.checkoutSummary}>
-                <Text style={styles.checkoutSummaryTitle}>ملخص الفاتورة</Text>
-                <View style={styles.checkoutSummaryRow}>
-                  <Text style={styles.checkoutSummaryValue}>{subtotal.toFixed(2)} {settings.currencySymbol}</Text>
-                  <Text style={styles.checkoutSummaryLabel}>المجموع الفرعي:</Text>
+            <ScrollView style={{ maxHeight: 400 }}>
+              <View style={styles.summaryContainer}>
+                <Text style={styles.summaryTitle}>ملخص الفاتورة</Text>
+                
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryValue}>{cartTotal.toFixed(2)} {settings.currencySymbol}</Text>
+                  <Text style={styles.summaryLabel}>المجموع الفرعي:</Text>
                 </View>
-                <View style={styles.checkoutSummaryRow}>
-                  <Text style={styles.checkoutSummaryValue}>{discountAmount.toFixed(2)} {settings.currencySymbol}</Text>
-                  <Text style={styles.checkoutSummaryLabel}>الخصم ({discount}%):</Text>
+                
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryValue}>{discountAmount.toFixed(2)} {settings.currencySymbol}</Text>
+                  <Text style={styles.summaryLabel}>الخصم:</Text>
                 </View>
-                <View style={styles.checkoutSummaryRow}>
-                  <Text style={styles.checkoutSummaryValue}>{taxAmount.toFixed(2)} {settings.currencySymbol}</Text>
-                  <Text style={styles.checkoutSummaryLabel}>الضريبة ({settings.taxRate}%):</Text>
+                
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryValue}>{taxAmount.toFixed(2)} {settings.currencySymbol}</Text>
+                  <Text style={styles.summaryLabel}>الضريبة:</Text>
                 </View>
-                <View style={[styles.checkoutSummaryRow, styles.checkoutTotalRow]}>
-                  <Text style={styles.checkoutTotalValue}>{total.toFixed(2)} {settings.currencySymbol}</Text>
-                  <Text style={[styles.checkoutSummaryLabel, { fontWeight: 'bold' }]}>الإجمالي:</Text>
+                
+                <View style={[styles.summaryRow, styles.totalRow]}>
+                  <Text style={styles.totalValue}>{finalTotal.toFixed(2)} {settings.currencySymbol}</Text>
+                  <Text style={[styles.summaryLabel, { fontWeight: 'bold' }]}>الإجمالي:</Text>
                 </View>
-              </View>
-
-              <Text style={styles.paymentMethodsTitle}>نوع الخصم:</Text>
-              <View style={styles.discountTypeSelector}>
-                <TouchableOpacity
-                  style={[
-                    styles.discountTypeButton,
-                    discountType === 'amount' && styles.discountTypeButtonActive,
-                  ]}
-                  onPress={() => setDiscountType('amount')}
-                >
-                  <Text
-                    style={[
-                      styles.discountTypeButtonText,
-                      discountType === 'amount'
-                        ? styles.discountTypeButtonTextActive
-                        : styles.discountTypeButtonTextInactive,
-                    ]}
-                  >
-                    مبلغ
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.discountTypeButton,
-                    discountType === 'percentage' && styles.discountTypeButtonActive,
-                  ]}
-                  onPress={() => setDiscountType('percentage')}
-                >
-                  <Text
-                    style={[
-                      styles.discountTypeButtonText,
-                      discountType === 'percentage'
-                        ? styles.discountTypeButtonTextActive
-                        : styles.discountTypeButtonTextInactive,
-                    ]}
-                  >
-                    نسبة %
-                  </Text>
-                </TouchableOpacity>
               </View>
 
               <Input
-                label={`الخصم (${discountType === 'percentage' ? '%' : settings.currencySymbol})`}
-                value={discount}
-                onChangeText={setDiscount}
+                label="الخصم (%)"
+                value={discount.toString()}
+                onChangeText={(text) => setDiscount(parseFloat(text) || 0)}
                 placeholder="0"
                 keyboardType="numeric"
               />
 
-              <Text style={styles.paymentMethodsTitle}>طريقة الدفع:</Text>
-              <View style={styles.paymentMethods}>
+              <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 8, textAlign: 'right' }}>
+                طريقة الدفع
+              </Text>
+              <View style={styles.paymentMethodSelector}>
                 <TouchableOpacity
                   style={[
-                    styles.paymentMethod,
-                    paymentMethod === 'cash' && styles.paymentMethodActive,
+                    styles.paymentMethodButton,
+                    paymentMethod === 'cash' && styles.paymentMethodButtonActive,
                   ]}
                   onPress={() => setPaymentMethod('cash')}
                 >
-                  <Banknote size={24} color={paymentMethod === 'cash' ? '#5865F2' : '#64748B'} />
-                  <Text style={[
-                    styles.paymentMethodText,
-                    paymentMethod === 'cash' && styles.paymentMethodTextActive,
-                  ]}>
+                  <Text
+                    style={[
+                      styles.paymentMethodButtonText,
+                      paymentMethod === 'cash' && styles.paymentMethodButtonTextActive,
+                    ]}
+                  >
                     نقدي
                   </Text>
                 </TouchableOpacity>
-
                 <TouchableOpacity
                   style={[
-                    styles.paymentMethod,
-                    paymentMethod === 'card' && styles.paymentMethodActive,
+                    styles.paymentMethodButton,
+                    paymentMethod === 'card' && styles.paymentMethodButtonActive,
                   ]}
                   onPress={() => setPaymentMethod('card')}
                 >
-                  <CreditCard size={24} color={paymentMethod === 'card' ? '#5865F2' : '#64748B'} />
-                  <Text style={[
-                    styles.paymentMethodText,
-                    paymentMethod === 'card' && styles.paymentMethodTextActive,
-                  ]}>
+                  <Text
+                    style={[
+                      styles.paymentMethodButtonText,
+                      paymentMethod === 'card' && styles.paymentMethodButtonTextActive,
+                    ]}
+                  >
                     بطاقة
                   </Text>
                 </TouchableOpacity>
-
                 <TouchableOpacity
                   style={[
-                    styles.paymentMethod,
-                    paymentMethod === 'transfer' && styles.paymentMethodActive,
+                    styles.paymentMethodButton,
+                    paymentMethod === 'transfer' && styles.paymentMethodButtonActive,
                   ]}
                   onPress={() => setPaymentMethod('transfer')}
                 >
-                  <Smartphone size={24} color={paymentMethod === 'transfer' ? '#5865F2' : '#64748B'} />
-                  <Text style={[
-                    styles.paymentMethodText,
-                    paymentMethod === 'transfer' && styles.paymentMethodTextActive,
-                  ]}>
+                  <Text
+                    style={[
+                      styles.paymentMethodButtonText,
+                      paymentMethod === 'transfer' && styles.paymentMethodButtonTextActive,
+                    ]}
+                  >
                     تحويل
                   </Text>
                 </TouchableOpacity>
-
                 <TouchableOpacity
                   style={[
-                    styles.paymentMethod,
-                    paymentMethod === 'credit' && styles.paymentMethodActive,
+                    styles.paymentMethodButton,
+                    paymentMethod === 'credit' && styles.paymentMethodButtonActive,
                   ]}
                   onPress={() => setPaymentMethod('credit')}
                 >
-                  <Clock size={24} color={paymentMethod === 'credit' ? '#5865F2' : '#64748B'} />
-                  <Text style={[
-                    styles.paymentMethodText,
-                    paymentMethod === 'credit' && styles.paymentMethodTextActive,
-                  ]}>
+                  <Text
+                    style={[
+                      styles.paymentMethodButtonText,
+                      paymentMethod === 'credit' && styles.paymentMethodButtonTextActive,
+                    ]}
+                  >
                     آجل
                   </Text>
                 </TouchableOpacity>
               </View>
 
               {paymentMethod !== 'credit' && (
-                <View style={styles.paidAmountContainer}>
-                  <Input
-                    label="المبلغ المدفوع"
-                    value={paidAmount}
-                    onChangeText={setPaidAmount}
-                    placeholder={total.toFixed(2)}
-                    keyboardType="numeric"
-                  />
-                </View>
+                <Input
+                  label="المبلغ المدفوع"
+                  value={paidAmount}
+                  onChangeText={setPaidAmount}
+                  placeholder={finalTotal.toFixed(2)}
+                  keyboardType="numeric"
+                  icon={<DollarSign size={20} color="#666" />}
+                />
               )}
 
-              {changeAmount > 0 && (
-                <View style={styles.changeContainer}>
-                  <Text style={styles.changeText}>
-                    الباقي للعميل: {changeAmount.toFixed(2)} {settings.currencySymbol}
+              {selectedCustomer && (
+                <View style={{ backgroundColor: '#F8F9FA', padding: 12, borderRadius: 8, marginBottom: 16 }}>
+                  <Text style={{ fontSize: 14, fontWeight: 'bold', textAlign: 'right', marginBottom: 4 }}>
+                    العميل المحدد: {selectedCustomer.nameAr}
                   </Text>
+                  <Text style={{ fontSize: 12, color: '#666', textAlign: 'right' }}>
+                    الهاتف: {selectedCustomer.phone}
+                  </Text>
+                  {selectedCustomer.currentBalance > 0 && (
+                    <Text style={{ fontSize: 12, color: '#EF4444', textAlign: 'right', fontWeight: 'bold' }}>
+                      ذمة سابقة: {selectedCustomer.currentBalance.toFixed(2)} {settings.currencySymbol}
+                    </Text>
+                  )}
                 </View>
               )}
+            </ScrollView>
 
-              <View style={styles.checkoutButtons}>
-                <Button
-                  title="إلغاء"
-                  onPress={() => setShowCheckoutModal(false)}
-                  variant="outline"
-                  style={styles.checkoutButton2}
-                />
-                <Button
-                  title="تأكيد الدفع"
-                  onPress={handleCheckout}
-                  style={styles.checkoutButton2}
-                  icon={<Check size={16} color="#FFFFFF" />}
-                />
-              </View>
-            </View>
-          </ScrollView>
-        </View>
-      </Modal>
-
-      {/* Camera Modal */}
-      <Modal visible={showCameraModal} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { width: '95%', height: '80%' }]}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>مسح الباركود</Text>
-              <TouchableOpacity 
-                style={styles.closeButton}
-                onPress={() => setShowCameraModal(false)}
-              >
-                <X size={24} color="#64748B" />
-              </TouchableOpacity>
-            </View>
-
-            {Platform.OS !== 'web' && permission?.granted ? (
-              <View style={{ flex: 1 }}>
-                <CameraView
-                  style={{ flex: 1 }}
-                  facing="back"
-                  onBarcodeScanned={handleCameraBarcodeScan}
-                >
-                  <View style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}>
-                    <View style={{
-                      width: 250,
-                      height: 250,
-                      borderWidth: 2,
-                      borderColor: '#FFFFFF',
-                      borderRadius: 12,
-                    }} />
-                    <Text style={{
-                      color: '#FFFFFF',
-                      fontSize: 16,
-                      fontWeight: 'bold',
-                      marginTop: 20,
-                      textAlign: 'center',
-                      fontFamily: 'Cairo-Bold',
-                    }}>
-                      وجه الكاميرا نحو الباركود
-                    </Text>
-                  </View>
-                </CameraView>
-              </View>
-            ) : (
-              <View style={styles.emptyCart}>
-                <Camera size={48} color="#CBD5E1" />
-                <Text style={styles.emptyCartText}>
-                  الكاميرا غير متاحة في المتصفح
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
-      </Modal>
-
-      {/* Calculator Modal */}
-      <Modal visible={showCalculator} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.calculatorModal}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>الحاسبة</Text>
-              <TouchableOpacity 
-                style={styles.closeButton}
-                onPress={() => setShowCalculator(false)}
-              >
-                <X size={24} color="#64748B" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.calculatorDisplay}>
-              <Text style={styles.calculatorValue}>
-                {calculatorValue || '0'}
-              </Text>
-            </View>
-
-            <View style={styles.calculatorGrid}>
-              {calculatorButtons.map((row, rowIndex) => (
-                <View key={rowIndex} style={styles.calculatorRow}>
-                  {row.map((button, buttonIndex) => {
-                    if (!button) return <View key={buttonIndex} style={{ flex: 1 }} />;
-                    
-                    const isOperator = ['/', '×', '-', '+', '=', 'C', '⌫'].includes(button);
-                    
-                    return (
-                      <TouchableOpacity
-                        key={buttonIndex}
-                        style={[
-                          styles.calculatorButton,
-                          isOperator && styles.operatorButton,
-                        ]}
-                        onPress={() => handleCalculatorPress(button)}
-                      >
-                        <Text
-                          style={[
-                            styles.calculatorButtonText,
-                            isOperator && styles.operatorButtonText,
-                          ]}
-                        >
-                          {button}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              ))}
+            <View style={styles.modalButtons}>
+              <Button
+                title="إلغاء"
+                onPress={() => setShowCheckoutModal(false)}
+                variant="outline"
+                style={styles.modalButton}
+              />
+              <Button
+                title="إتمام البيع"
+                onPress={handleCompleteSale}
+                style={styles.modalButton}
+                icon={<CreditCard size={16} color="#FFFFFF" />}
+              />
             </View>
           </View>
         </View>
