@@ -138,6 +138,8 @@ export interface Settings {
   receiptFooterAr: string;
   invoicePrefix: string;
   nextInvoiceNumber: number;
+  vatNumber: string;
+  crNumber: string;
   autoAddSalesToCashbox: boolean;
   autoDeductPurchasesFromCashbox: boolean;
   autoDeductExpensesFromCashbox: boolean;

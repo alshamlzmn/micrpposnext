@@ -51,6 +51,8 @@ export default function Settings() {
     businessPhone: settings.businessPhone,
     businessEmail: settings.businessEmail,
     businessWebsite: settings.businessWebsite || '',
+    vatNumber: settings.vatNumber,
+    crNumber: settings.crNumber,
   });
   const [taxForm, setTaxForm] = useState({
     taxRate: settings.taxRate.toString(),
@@ -564,6 +566,20 @@ export default function Settings() {
                 onChangeText={(text) => setBusinessForm(prev => ({ ...prev, businessWebsite: text }))}
                 placeholder="https://www.business.com"
                 keyboardType="url"
+              />
+
+              <Input
+                label="الرقم الضريبي"
+                value={businessForm.vatNumber}
+                onChangeText={(text) => setBusinessForm(prev => ({ ...prev, vatNumber: text }))}
+                placeholder="300000000000003"
+              />
+
+              <Input
+                label="رقم السجل التجاري"
+                value={businessForm.crNumber}
+                onChangeText={(text) => setBusinessForm(prev => ({ ...prev, crNumber: text }))}
+                placeholder="1010000000"
               />
 
               <View style={styles.modalButtons}>

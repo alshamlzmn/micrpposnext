@@ -486,13 +486,13 @@ export default function Inquiries() {
   };
 
   const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('ar-SA', {
+    return new Intl.DateTimeFormat('en-GB', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-    }).format(date);
+    }).format(date).replace(/\//g, '-');
   };
 
   const getPaymentMethodText = (method: string) => {

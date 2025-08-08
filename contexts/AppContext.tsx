@@ -494,6 +494,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     receiptFooterAr: 'شكراً لتعاملكم معنا!',
     invoicePrefix: 'INV',
     nextInvoiceNumber: 1001,
+    vatNumber: '300000000000003',
+    crNumber: '1010000000',
     autoAddSalesToCashbox: true,
     autoDeductPurchasesFromCashbox: true,
     autoDeductExpensesFromCashbox: true,

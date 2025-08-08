@@ -497,8 +497,8 @@ export default function Invoices() {
       supplierInfo: {
         name: settings.businessName,
         nameAr: settings.businessNameAr,
-        vatNumber: '300000000000003', // Example VAT number
-        crNumber: '1010000000', // Example CR number
+        vatNumber: settings.vatNumber,
+        crNumber: settings.crNumber,
         address: settings.businessAddress,
         addressAr: settings.businessAddressAr,
         phone: settings.businessPhone,
@@ -514,7 +514,7 @@ export default function Invoices() {
     // ZATCA QR Code format (simplified)
     const qrData = {
       seller: settings.businessNameAr,
-      vatNumber: '300000000000003',
+      vatNumber: settings.vatNumber,
       timestamp: invoice.date.toISOString(),
       total: invoice.total.toString(),
       vatAmount: invoice.tax.toString(),
@@ -930,8 +930,8 @@ QR Code: ${invoice.qrCode}
       supplierInfo: {
         name: settings.businessName,
         nameAr: settings.businessNameAr,
-        vatNumber: '300000000000003',
-        crNumber: '1010000000',
+        vatNumber: settings.vatNumber,
+        crNumber: settings.crNumber,
         address: settings.businessAddress,
         addressAr: settings.businessAddressAr,
         phone: settings.businessPhone,
