@@ -657,8 +657,8 @@ ${settings.receiptFooterAr}
               sale.items.forEach(item => {
                 const product = products.find(p => p.id === item.productId);
                 if (product) {
+                  console.log('Returning product to stock:', product.nameAr, 'quantity:', item.quantity);
                   updateProduct({
-                    console.log('Returning product to stock:', product.nameAr, 'quantity:', item.quantity);
                     ...product,
                     stock: product.stock + item.quantity
                   });
