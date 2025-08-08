@@ -50,6 +50,7 @@ interface AppContextType {
   deleteSupplier: (id: string) => void;
   addSale: (sale: Sale) => void;
   updateSale: (sale: Sale) => void;
+  deleteSale: (id: string) => void;
   addCashboxTransaction: (transaction: CashboxTransaction) => void;
   updateCashboxTransaction: (transaction: CashboxTransaction) => void;
   deleteCashboxTransaction: (id: string) => void;
@@ -757,6 +758,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     dbOperations.updateSale(sale);
   };
 
+  const deleteSale = (id: string) => {
+    setSales(prev => prev.filter(s => s.id !== id));
+    dbOperations.deleteSale(id);
+  };
+
   const handleReturnSale = (sale: Sale) => {
     // Update sale status to returned
     setSales(prev => prev.map(s => s.id === sale.id ? { ...s, status: 'returned' as const } : s));
@@ -1065,6 +1071,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         deleteSupplier,
         addSale,
         updateSale,
+        deleteSale,
         addCashboxTransaction,
         updateCashboxTransaction,
         deleteCashboxTransaction,

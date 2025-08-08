@@ -150,6 +150,11 @@ export const dbOperations = {
     await db.sales.put(sale);
   },
 
+  // Delete sale
+  async deleteSale(id: string): Promise<void> {
+    await db.sales.delete(id);
+  },
+
   // Cashbox Transactions
   async getAllCashboxTransactions(): Promise<CashboxTransaction[]> {
     return await db.cashboxTransactions.toArray();

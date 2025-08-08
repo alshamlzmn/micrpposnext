@@ -968,7 +968,11 @@ QR Code: ${invoice.qrCode}
           text: 'حذف', 
           style: 'destructive',
           onPress: () => {
-            setInvoices(prev => prev.filter(inv => inv.id !== invoice.id));
+            // Find the corresponding sale and delete it
+            const correspondingSale = sales.find(s => s.invoiceNumber === invoice.invoiceNumber);
+            if (correspondingSale) {
+              deleteSale(correspondingSale.id);
+            }
             Alert.alert('نجح', 'تم حذف الفاتورة بنجاح');
           }
         },
