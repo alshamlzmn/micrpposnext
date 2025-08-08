@@ -186,7 +186,7 @@ export default function Inquiries() {
       iconStyle: styles.salesIcon,
       color: '#228B22',
       type: 'sales',
-    }
+    },
     {
       title: 'استعلام الفواتير',
       icon: Receipt,
