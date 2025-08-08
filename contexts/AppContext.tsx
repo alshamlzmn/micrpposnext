@@ -1024,7 +1024,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Error importing data:', error);
-      throw new Error('فشل في استيراد البيانات');
+      throw new Error(error instanceof Error ? error.message : 'فشل في استيراد البيانات');
     }
   };
 

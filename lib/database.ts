@@ -246,7 +246,7 @@ export const dbOperations = {
       
     } catch (error) {
       console.error('Error importing data:', error);
-      throw new Error('Failed to import backup data');
+      throw new Error(`فشل في استيراد البيانات: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`);
     }
   },
 
