@@ -1,5 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Language, Theme, Product, Customer, Sale, Supplier, Settings, Category, CashboxTransaction } from '@/types/global';
+import { db, dbOperations, hydrateDates } from '@/lib/database';
+import { Platform } from 'react-native';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import * as DocumentPicker from 'expo-document-picker';
 
 interface AppContextType {
   // User & Auth
@@ -52,6 +57,10 @@ interface AppContextType {
   
   // Customer debt payment
   payCustomerDebt: (customerId: string, amount: number) => void;
+  
+  // Backup and Restore
+  exportData: () => Promise<void>;
+  importData: () => Promise<void>;
   
   // Cart for POS
   cartItems: Array<{ product: Product; quantity: number }>;
@@ -499,6 +508,52 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [cartItems, setCartItems] = useState<Array<{ product: Product; quantity: number }>>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
+  // Initialize database and load data
+  useEffect(() => {
+    const initializeDatabase = async () => {
+      try {
+        // Initialize database with default data if empty
+        await dbOperations.initializeWithDefaults();
+        
+        // Load all data from database
+        const [
+          dbCategories,
+          dbProducts,
+          dbCustomers,
+          dbSuppliers,
+          dbSales,
+          dbCashboxTransactions,
+          dbSettings,
+        ] = await Promise.all([
+          dbOperations.getAllCategories(),
+          dbOperations.getAllProducts(),
+          dbOperations.getAllCustomers(),
+          dbOperations.getAllSuppliers(),
+          dbOperations.getAllSales(),
+          dbOperations.getAllCashboxTransactions(),
+          dbOperations.getSettings(),
+        ]);
+        
+        // Update state with loaded data
+        setCategories(dbCategories);
+        setProducts(dbProducts);
+        setCustomers(dbCustomers);
+        setSuppliers(dbSuppliers);
+        setSales(dbSales);
+        setCashboxTransactions(dbCashboxTransactions);
+        
+        if (dbSettings) {
+          setSettings(dbSettings);
+        }
+        
+      } catch (error) {
+        console.error('Error initializing database:', error);
+      }
+    };
+    
+    initializeDatabase();
+  }, []);
+
   const t = (key: string): string => {
     return translations[language.code]?.[key] || key;
   };
@@ -564,59 +619,74 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateSettings = (newSettings: Partial<Settings>) => {
-    setSettings(prev => ({ ...prev, ...newSettings }));
+    const updatedSettings = { ...settings, ...newSettings };
+    setSettings(updatedSettings);
+    dbOperations.updateSettings(updatedSettings);
   };
 
   const addCategory = (category: Category) => {
     setCategories(prev => [...prev, category]);
+    dbOperations.addCategory(category);
   };
 
   const updateCategory = (category: Category) => {
     setCategories(prev => prev.map(c => c.id === category.id ? category : c));
+    dbOperations.updateCategory(category);
   };
 
   const deleteCategory = (id: string) => {
     setCategories(prev => prev.filter(c => c.id !== id));
+    dbOperations.deleteCategory(id);
   };
 
   const addProduct = (product: Product) => {
     setProducts(prev => [...prev, product]);
+    dbOperations.addProduct(product);
   };
 
   const updateProduct = (product: Product) => {
     setProducts(prev => prev.map(p => p.id === product.id ? product : p));
+    dbOperations.updateProduct(product);
   };
 
   const deleteProduct = (id: string) => {
     setProducts(prev => prev.filter(p => p.id !== id));
+    dbOperations.deleteProduct(id);
   };
 
   const addCustomer = (customer: Customer) => {
     setCustomers(prev => [...prev, customer]);
+    dbOperations.addCustomer(customer);
   };
 
   const updateCustomer = (customer: Customer) => {
     setCustomers(prev => prev.map(c => c.id === customer.id ? customer : c));
+    dbOperations.updateCustomer(customer);
   };
 
   const deleteCustomer = (id: string) => {
     setCustomers(prev => prev.filter(c => c.id !== id));
+    dbOperations.deleteCustomer(id);
   };
 
   const addSupplier = (supplier: Supplier) => {
     setSuppliers(prev => [...prev, supplier]);
+    dbOperations.addSupplier(supplier);
   };
 
   const updateSupplier = (supplier: Supplier) => {
     setSuppliers(prev => prev.map(s => s.id === supplier.id ? supplier : s));
+    dbOperations.updateSupplier(supplier);
   };
 
   const deleteSupplier = (id: string) => {
     setSuppliers(prev => prev.filter(s => s.id !== id));
+    dbOperations.deleteSupplier(id);
   };
 
   const addSale = (sale: Sale) => {
     setSales(prev => [sale, ...prev]);
+    dbOperations.addSale(sale);
     
     // Update product stock
     sale.items.forEach(item => {
@@ -677,10 +747,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     // Update settings for next invoice number
     setSettings(prev => ({ ...prev, nextInvoiceNumber: prev.nextInvoiceNumber + 1 }));
+    updateSettings({ nextInvoiceNumber: settings.nextInvoiceNumber + 1 });
   };
 
   const updateSale = (sale: Sale) => {
     setSales(prev => prev.map(s => s.id === sale.id ? sale : s));
+    dbOperations.updateSale(sale);
   };
 
   const handleReturnSale = (sale: Sale) => {
@@ -728,14 +800,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const addCashboxTransaction = (transaction: CashboxTransaction) => {
     setCashboxTransactions(prev => [transaction, ...prev]);
+    dbOperations.addCashboxTransaction(transaction);
   };
 
   const updateCashboxTransaction = (transaction: CashboxTransaction) => {
     setCashboxTransactions(prev => prev.map(t => t.id === transaction.id ? transaction : t));
+    dbOperations.updateCashboxTransaction(transaction);
   };
 
   const deleteCashboxTransaction = (id: string) => {
     setCashboxTransactions(prev => prev.filter(t => t.id !== id));
+    dbOperations.deleteCashboxTransaction(id);
   };
 
   const getCashboxBalance = (): number => {
@@ -811,6 +886,148 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const exportData = async () => {
+    try {
+      const jsonData = await dbOperations.exportAllData();
+      const fileName = `micropos-backup-${new Date().toISOString().split('T')[0]}.json`;
+      
+      if (Platform.OS === 'web') {
+        // For web, create a downloadable file
+        const element = document.createElement('a');
+        const file = new Blob([jsonData], { type: 'application/json' });
+        element.href = URL.createObjectURL(file);
+        element.download = fileName;
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+      } else {
+        // For mobile, save to device and share
+        const fileUri = FileSystem.documentDirectory + fileName;
+        await FileSystem.writeAsStringAsync(fileUri, jsonData);
+        await Sharing.shareAsync(fileUri);
+      }
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      throw new Error('فشل في تصدير البيانات');
+    }
+  };
+
+  const importData = async () => {
+    try {
+      let jsonData: string;
+      
+      if (Platform.OS === 'web') {
+        // For web, use file input
+        return new Promise<void>((resolve, reject) => {
+          const input = document.createElement('input');
+          input.type = 'file';
+          input.accept = '.json';
+          input.onchange = async (e: any) => {
+            try {
+              const file = e.target.files[0];
+              if (!file) {
+                reject(new Error('لم يتم اختيار ملف'));
+                return;
+              }
+              
+              const reader = new FileReader();
+              reader.onload = async (event: any) => {
+                try {
+                  jsonData = event.target.result;
+                  await dbOperations.importAllData(jsonData);
+                  
+                  // Reload data from database
+                  const [
+                    dbCategories,
+                    dbProducts,
+                    dbCustomers,
+                    dbSuppliers,
+                    dbSales,
+                    dbCashboxTransactions,
+                    dbSettings,
+                  ] = await Promise.all([
+                    dbOperations.getAllCategories(),
+                    dbOperations.getAllProducts(),
+                    dbOperations.getAllCustomers(),
+                    dbOperations.getAllSuppliers(),
+                    dbOperations.getAllSales(),
+                    dbOperations.getAllCashboxTransactions(),
+                    dbOperations.getSettings(),
+                  ]);
+                  
+                  setCategories(dbCategories);
+                  setProducts(dbProducts);
+                  setCustomers(dbCustomers);
+                  setSuppliers(dbSuppliers);
+                  setSales(dbSales);
+                  setCashboxTransactions(dbCashboxTransactions);
+                  
+                  if (dbSettings) {
+                    setSettings(dbSettings);
+                  }
+                  
+                  resolve();
+                } catch (error) {
+                  reject(error);
+                }
+              };
+              reader.readAsText(file);
+            } catch (error) {
+              reject(error);
+            }
+          };
+          input.click();
+        });
+      } else {
+        // For mobile, use DocumentPicker
+        const result = await DocumentPicker.getDocumentAsync({
+          type: 'application/json',
+          copyToCacheDirectory: true,
+        });
+        
+        if (result.canceled || !result.assets[0]) {
+          throw new Error('لم يتم اختيار ملف');
+        }
+        
+        jsonData = await FileSystem.readAsStringAsync(result.assets[0].uri);
+        await dbOperations.importAllData(jsonData);
+        
+        // Reload data from database
+        const [
+          dbCategories,
+          dbProducts,
+          dbCustomers,
+          dbSuppliers,
+          dbSales,
+          dbCashboxTransactions,
+          dbSettings,
+        ] = await Promise.all([
+          dbOperations.getAllCategories(),
+          dbOperations.getAllProducts(),
+          dbOperations.getAllCustomers(),
+          dbOperations.getAllSuppliers(),
+          dbOperations.getAllSales(),
+          dbOperations.getAllCashboxTransactions(),
+          dbOperations.getSettings(),
+        ]);
+        
+        setCategories(dbCategories);
+        setProducts(dbProducts);
+        setCustomers(dbCustomers);
+        setSuppliers(dbSuppliers);
+        setSales(dbSales);
+        setCashboxTransactions(dbCashboxTransactions);
+        
+        if (dbSettings) {
+          setSettings(dbSettings);
+        }
+      }
+    } catch (error) {
+      console.error('Error importing data:', error);
+      throw new Error('فشل في استيراد البيانات');
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -858,6 +1075,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updateCartQuantity,
         clearCart,
         payCustomerDebt,
+        exportData,
+        importData,
       }}
     >
       {children}

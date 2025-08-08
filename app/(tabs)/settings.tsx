@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   Switch,
   Modal,
+  Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
@@ -26,6 +28,10 @@ import {
   Wallet,
   Package,
   TrendingDown,
+  Download,
+  Upload,
+  Database,
+  HardDrive,
 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { Card } from '@/components/ui/Card';
@@ -33,7 +39,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 
 export default function Settings() {
-  const { theme, t, language, setLanguage, toggleTheme, user, settings, updateSettings } = useApp();
+  const { theme, t, language, setLanguage, toggleTheme, user, settings, updateSettings, exportData, importData } = useApp();
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const [showTaxModal, setShowTaxModal] = useState(false);
   const [showCashboxModal, setShowCashboxModal] = useState(false);
@@ -58,6 +64,37 @@ export default function Settings() {
     autoDeductPurchasesFromCashbox: settings.autoDeductPurchasesFromCashbox,
     autoDeductExpensesFromCashbox: settings.autoDeductExpensesFromCashbox,
   });
+
+  const handleExportData = async () => {
+    try {
+      await exportData();
+      Alert.alert('نجح', 'تم تصدير النسخة الاحتياطية بنجاح');
+    } catch (error) {
+      Alert.alert('خطأ', 'فشل في تصدير النسخة الاحتياطية');
+    }
+  };
+
+  const handleImportData = async () => {
+    Alert.alert(
+      'تأكيد الاستيراد',
+      'سيتم استبدال جميع البيانات الحالية بالبيانات المستوردة. هل أنت متأكد؟',
+      [
+        { text: 'إلغاء', style: 'cancel' },
+        {
+          text: 'استيراد',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await importData();
+              Alert.alert('نجح', 'تم استيراد البيانات بنجاح');
+            } catch (error) {
+              Alert.alert('خطأ', 'فشل في استيراد البيانات');
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const styles = StyleSheet.create({
     container: {
@@ -279,6 +316,45 @@ export default function Settings() {
   };
 
   const menuSections = [
+    {
+      title: 'إدارة البيانات',
+      items: [
+        {
+          title: 'حفظ نسخة احتياطية',
+          subtitle: 'تصدير جميع البيانات إلى ملف JSON',
+          icon: Download,
+          onPress: handleExportData,
+        },
+        {
+          title: 'استعادة نسخة احتياطية',
+          subtitle: 'استيراد البيانات من ملف JSON',
+          icon: Upload,
+          onPress: handleImportData,
+        },
+        {
+          title: 'قاعدة البيانات المحلية',
+          subtitle: 'البيانات محفوظة محلياً - تعمل أوفلاين',
+          icon: Database,
+          custom: (
+            <View style={{
+              backgroundColor: '#10B981',
+              paddingHorizontal: 8,
+              paddingVertical: 4,
+              borderRadius: 12,
+            }}>
+              <Text style={{
+                color: '#FFFFFF',
+                fontSize: 10,
+                fontWeight: 'bold',
+                fontFamily: 'Cairo-Bold',
+              }}>
+                متصل
+              </Text>
+            </View>
+          ),
+        },
+      ],
+    },
     {
       title: 'معلومات الشركة',
       items: [
