@@ -9,7 +9,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Search, Package, Users, Truck, ShoppingCart, DollarSign, TrendingDown, Calendar, FileText, X, ChartBar as BarChart3 } from 'lucide-react-native';
+import { Search, Package, Users, Truck, ShoppingCart, DollarSign, TrendingDown, Calendar, FileText, X, ChartBar as BarChart3, Receipt } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -87,6 +87,9 @@ export default function Inquiries() {
     },
     salesIcon: {
       backgroundColor: '#F0FFF0',
+    },
+    invoicesIcon: {
+      backgroundColor: '#E8F5E8',
     },
     itemTitle: {
       fontSize: 16,
@@ -184,6 +187,20 @@ export default function Inquiries() {
       color: '#228B22',
       type: 'sales',
     }
+    {
+      title: 'استعلام الفواتير',
+      icon: Receipt,
+      iconStyle: styles.invoicesIcon,
+      color: '#10B981',
+      type: 'invoices',
+    },
+    {
+      title: 'استعلام الفواتير',
+      icon: Receipt,
+      iconStyle: styles.invoicesIcon,
+      color: '#10B981',
+      type: 'invoices',
+    },
   ];
 
   const renderGridItems = () => {
@@ -237,6 +254,8 @@ export default function Inquiries() {
         return 'استعلام الموردين';
       case 'sales':
         return 'استعلام المبيعات';
+      case 'invoices':
+        return 'استعلام الفواتير';
       default:
         return 'استعلام';
     }
@@ -249,6 +268,21 @@ export default function Inquiries() {
         String(value).toLowerCase().includes(query.toLowerCase())
       )
     );
+  };
+
+  const getSaleStatusText = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'مكتملة';
+      case 'pending':
+        return 'معلقة';
+      case 'cancelled':
+        return 'ملغية';
+      case 'returned':
+        return 'مرجعة';
+      default:
+        return status;
+    }
   };
 
   const renderInquiryContent = () => {
@@ -265,6 +299,9 @@ export default function Inquiries() {
         data = suppliers || [];
         break;
       case 'sales':
+        data = sales || [];
+        break;
+      case 'invoices':
         data = sales || [];
         break;
       default:
@@ -295,6 +332,7 @@ export default function Inquiries() {
                   {selectedInquiry === 'customers' && `الهاتف: ${item.phone || 'غير محدد'}`}
                   {selectedInquiry === 'suppliers' && `الهاتف: ${item.phone || 'غير محدد'}`}
                   {selectedInquiry === 'sales' && `المبلغ: ${item.total || item.amount || 'غير محدد'} - العميل: ${item.customer?.nameAr || 'عميل غير مسجل'}`}
+                  {selectedInquiry === 'invoices' && `رقم الفاتورة: ${item.invoiceNumber || 'غير محدد'} - المبلغ: ${item.total || 'غير محدد'} ${settings.currencySymbol} - الحالة: ${getSaleStatusText(item.status || 'غير محدد')} - العميل: ${item.customer?.nameAr || 'عميل غير مسجل'}`}
                 </Text>
               </View>
             ))
