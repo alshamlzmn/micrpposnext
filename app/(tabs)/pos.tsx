@@ -11,7 +11,6 @@ import {
   Dimensions,
   Platform,
   Image as RNImage, // Rename to avoid conflict with global Image constructor on web
-} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
   Search, 
@@ -156,12 +155,12 @@ export default function POS() {
     },
     content: {
       flex: 1,
-      ...(Platform.OS === 'web'
-        ? { flexDirection: 'row', paddingTop: 20 }
-        : { flexDirection: 'column', paddingHorizontal: 16, paddingTop: 16 }),
+      flexDirection: 'column', // Always column for main content flow
+      paddingHorizontal: 16, // Keep padding for overall layout
+      paddingTop: 16,
     },
     // Left Panel - Products Grid
-    leftPanel: {
+    productGridContainer: { // Renamed from leftPanel
       backgroundColor: '#FFFFFF',
       borderRadius: 16,
       padding: 16,
@@ -170,9 +169,20 @@ export default function POS() {
       shadowOpacity: 0.1,
       shadowRadius: 8,
       elevation: 3,
-      ...(Platform.OS === 'web'
-        ? { width: 420, margin: 16 }
-        : { width: '100%', marginBottom: 16 }),
+      width: '100%', // Always full width on mobile
+      marginBottom: 16,
+    },
+    productPage: { // New style for each 2x2 product page
+      width: width - (16 * 2), // Screen width - content padding
+      height: 'auto', // Will adjust based on content
+      flexDirection: 'column',
+      justifyContent: 'space-between',
+      paddingHorizontal: 8, // Padding within the page
+    },
+    productRow: { // New style for each row within a product page
+      flexDirection: 'row',
+      justifyContent: 'space-around', // Distribute items evenly
+      marginBottom: 8, // Gap between rows
     },
     categoriesContainer: {
       marginBottom: 16,
@@ -203,13 +213,17 @@ export default function POS() {
     },
     productsGrid: {
       flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
+      // flexWrap: 'wrap', // Removed, as we're chunking into pages
+      // gap: 8, // Handled by productRow and productGridItem margins
+    },
+    productsScrollContainer: { // New style for the horizontal ScrollView wrapping product pages
+      marginBottom: 16, // Space below the product grid
+      marginHorizontal: -16, // Counteract content padding to make it edge-to-edge
     },
     productGridItem: {
       width: Platform.OS === 'web'
-        ? (420 - 32 - 32) / 5 // 5 columns for web
-        : (width - 32 - (3 * 8)) / 4, // 4 columns for mobile (width - panel_padding - gaps)
+        ? (420 - 32 - 32) / 5 // 5 columns for web (original calculation)
+        : (width - (16 * 2) - (16 * 2) - 8) / 2, // (screen width - content padding - productGridContainer padding - gap) / 2
       aspectRatio: 1,
       backgroundColor: '#F8FAFC',
       borderRadius: 12,
@@ -254,9 +268,8 @@ export default function POS() {
       shadowOpacity: 0.1,
       shadowRadius: 8,
       elevation: 3,
-      ...(Platform.OS === 'web'
-        ? { flex: 1, margin: 16, marginLeft: 0 }
-        : { width: '100%', marginBottom: 16 }),
+      width: '100%', // Always full width on mobile
+      marginBottom: 16,
     },
     cartHeader: {
       flexDirection: 'row',
@@ -371,10 +384,8 @@ export default function POS() {
       shadowOpacity: 0.1,
       shadowRadius: 8,
       elevation: 3,
-      justifyContent: 'space-between',
-      ...(Platform.OS === 'web'
-        ? { width: 300, margin: 16, marginLeft: 0 }
-        : { width: '100%', marginBottom: 16 }),
+      width: '100%', // Always full width on mobile
+      marginBottom: 16,
     },
     summarySection: {
       flex: 1,
@@ -781,6 +792,14 @@ export default function POS() {
     }
   };
 
+  // Helper to chunk array for 2x2 grid display
+  const chunkArray = (arr, size) => {
+    const chunkedArr = [];
+    for (let i = 0; i < arr.length; i += size) {
+      chunkedArr.push(arr.slice(i, i + size));
+    }
+    return chunkedArr;
+  };
   const handleBarcodeSearch = (barcode: string) => {
     const product = products.find(p => 
       p.barcode === barcode || 
@@ -961,53 +980,184 @@ export default function POS() {
       </View>
 
       <View style={styles.content}>
-        {/* Left Panel - Products Grid */}
-        <View style={styles.leftPanel}>
-          {/* Categories */}
-          <View style={styles.categoriesContainer}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScroll}>
+        {/* Categories (Moved to top of content) */}
+        <View style={styles.categoriesContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScroll}>
+            <TouchableOpacity
+              style={[
+                styles.categoryChip,
+                selectedCategory === 'all' && styles.categoryChipActive,
+              ]}
+              onPress={() => setSelectedCategory('all')}
+            >
+              <Text
+                style={[
+                  styles.categoryChipText,
+                  selectedCategory === 'all' && styles.categoryChipTextActive,
+                ]}
+              >
+                الكل
+              </Text>
+            </TouchableOpacity>
+            {categories.map((category) => (
               <TouchableOpacity
+                key={category.id}
                 style={[
                   styles.categoryChip,
-                  selectedCategory === 'all' && styles.categoryChipActive,
+                  selectedCategory === category.id && styles.categoryChipActive,
                 ]}
-                onPress={() => setSelectedCategory('all')}
+                onPress={() => setSelectedCategory(category.id)}
               >
                 <Text
                   style={[
                     styles.categoryChipText,
-                    selectedCategory === 'all' && styles.categoryChipTextActive,
+                    selectedCategory === category.id && styles.categoryChipTextActive,
                   ]}
                 >
-                  الكل
+                  {category.nameAr}
                 </Text>
               </TouchableOpacity>
-              {categories.map((category) => (
-                <TouchableOpacity
-                  key={category.id}
-                  style={[
-                    styles.categoryChip,
-                    selectedCategory === category.id && styles.categoryChipActive,
-                  ]}
-                  onPress={() => setSelectedCategory(category.id)}
-                >
-                  <Text
-                    style={[
-                      styles.categoryChipText,
-                      selectedCategory === category.id && styles.categoryChipTextActive,
-                    ]}
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Products Grid (Now horizontally scrollable 2x2 pages) */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.productsScrollContainer}>
+          {chunkArray(filteredProducts, 4).map((page, pageIndex) => (
+            <View key={pageIndex} style={styles.productPage}>
+              <View style={styles.productRow}>
+                {page[0] && (
+                  <TouchableOpacity
+                    key={page[0].id}
+                    style={styles.productGridItem}
+                    onPress={() => {
+                      addToCart(page[0]);
+                      playAddToCartSound();
+                    }}
+                    activeOpacity={0.7}
                   >
-                    {category.nameAr}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+                    {page[0].image ? (
+                      Platform.OS === 'web' ? (
+                        <img src={page[0].image} style={styles.productGridImageWeb} />
+                      ) : (
+                        <RNImage source={{ uri: page[0].image }} style={styles.productGridImage} />
+                      )
+                    ) : (
+                      <View style={styles.productGridImage} />
+                    )}
+                    <Text style={styles.productGridName} numberOfLines={2}>
+                      {page[0].nameAr}
+                    </Text>
+                    <Text style={styles.productGridPrice}>
+                      {page[0].price.toFixed(2)}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                {page[1] && (
+                  <TouchableOpacity
+                    key={page[1].id}
+                    style={styles.productGridItem}
+                    onPress={() => {
+                      addToCart(page[1]);
+                      playAddToCartSound();
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    {page[1].image ? (
+                      Platform.OS === 'web' ? (
+                        <img src={page[1].image} style={styles.productGridImageWeb} />
+                      ) : (
+                        <RNImage source={{ uri: page[1].image }} style={styles.productGridImage} />
+                      )
+                    ) : (
+                      <View style={styles.productGridImage} />
+                    )}
+                    <Text style={styles.productGridName} numberOfLines={2}>
+                      {page[1].nameAr}
+                    </Text>
+                    <Text style={styles.productGridPrice}>
+                      {page[1].price.toFixed(2)}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              <View style={styles.productRow}>
+                {page[2] && (
+                  <TouchableOpacity
+                    key={page[2].id}
+                    style={styles.productGridItem}
+                    onPress={() => {
+                      addToCart(page[2]);
+                      playAddToCartSound();
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    {page[2].image ? (
+                      Platform.OS === 'web' ? (
+                        <img src={page[2].image} style={styles.productGridImageWeb} />
+                      ) : (
+                        <RNImage source={{ uri: page[2].image }} style={styles.productGridImage} />
+                      )
+                    ) : (
+                      <View style={styles.productGridImage} />
+                    )}
+                    <Text style={styles.productGridName} numberOfLines={2}>
+                      {page[2].nameAr}
+                    </Text>
+                    <Text style={styles.productGridPrice}>
+                      {page[2].price.toFixed(2)}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                {page[3] && (
+                  <TouchableOpacity
+                    key={page[3].id}
+                    style={styles.productGridItem}
+                    onPress={() => {
+                      addToCart(page[3]);
+                      playAddToCartSound();
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    {page[3].image ? (
+                      Platform.OS === 'web' ? (
+                        <img src={page[3].image} style={styles.productGridImageWeb} />
+                      ) : (
+                        <RNImage source={{ uri: page[3].image }} style={styles.productGridImage} />
+                      )
+                    ) : (
+                      <View style={styles.productGridImage} />
+                    )}
+                    <Text style={styles.productGridName} numberOfLines={2}>
+                      {page[3].nameAr}
+                    </Text>
+                    <Text style={styles.productGridPrice}>
+                      {page[3].price.toFixed(2)}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+
+        {/* Center Panel - Cart Items */}
+        <View style={styles.centerPanel}>
+          <View style={styles.cartHeader}>
+            <Text style={styles.cartTitle}>قائمة المنتجات المضافة إلى سلة البيع</Text>
+            <View style={styles.cartBadge}>
+              <Text style={styles.cartBadgeText}>{cartItems.length}</Text>
+            </View>
           </View>
 
-          {/* Products Grid */}
-          <ScrollView showsVerticalScrollIndicator={false}>
-            <View style={styles.productsGrid}>
-              {filteredProducts.map((product) => (
+          {cartItems.length === 0 ? (
+            <View style={styles.emptyCart}>
+              <ShoppingCart size={64} color="#CBD5E1" />
+              <Text style={styles.emptyCartText}>السلة فارغة</Text>
+            </View>
+          ) : (
+            <ScrollView style={styles.cartItemsList} showsVerticalScrollIndicator={false}>
+              {cartItems.map((item) => (
                 <TouchableOpacity
                   key={product.id}
                   style={styles.productGridItem}
@@ -1095,7 +1245,6 @@ export default function POS() {
                 </View>
               ))}
             </ScrollView>
-          )}
         </View>
 
         {/* Right Panel - Summary & Checkout */}
