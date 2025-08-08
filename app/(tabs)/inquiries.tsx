@@ -492,7 +492,7 @@ export default function Inquiries() {
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-    }).format(date);
+    }).format(date).replace(/\//g, '-');
   };
 
   const getPaymentMethodText = (method: string) => {
@@ -647,8 +647,8 @@ ${settings.receiptFooterAr}
           text: 'إرجاع', 
           style: 'destructive',
           onPress: () => {
+            console.log('Attempting to return sale:', sale.invoiceNumber);
             try {
-              console.log('Starting sale return process for:', sale.invoiceNumber);
               // Update sale status to returned
               const updatedSale = { ...sale, status: 'returned' as const };
               updateSale(updatedSale);
@@ -657,7 +657,6 @@ ${settings.receiptFooterAr}
               sale.items.forEach(item => {
                 const product = products.find(p => p.id === item.productId);
                 if (product) {
-                  console.log('Returning product to stock:', product.nameAr, 'quantity:', item.quantity);
                   console.log('Returning product to stock:', product.nameAr, 'quantity:', item.quantity);
                   updateProduct({
                     ...product,
@@ -682,7 +681,6 @@ ${settings.receiptFooterAr}
               // Add cashbox transaction for returned amount
               if (sale.paidAmount > 0) {
                 console.log('Adding cashbox transaction for return:', sale.paidAmount);
-                console.log('Adding cashbox transaction for return:', sale.paidAmount);
                 addCashboxTransaction({
                   id: Date.now().toString(),
                   type: 'subtract',
@@ -696,7 +694,8 @@ ${settings.receiptFooterAr}
                 });
               }
               
-              setSelectedDetailedInvoice(updatedSale);
+              setSelectedDetailedInvoice(updatedSale); // Update the local state for the modal
+              setShowDetailedInvoiceModal(false);
               Alert.alert('نجح', 'تم إرجاع الفاتورة بنجاح');
             } catch (error) {
               console.error('Error during sale return:', error);
