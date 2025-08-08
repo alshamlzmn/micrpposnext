@@ -62,7 +62,7 @@ interface ZATCAInvoice {
 }
 
 export default function Invoices() {
-  const { theme, t, language, sales, settings, updateSale, products, updateProduct, updateCustomer, addCashboxTransaction, customers } = useApp();
+  const { theme, t, language, sales, settings, updateSale, products, updateProduct, updateCustomer, addCashboxTransaction, customers, deleteSale } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [showViewModal, setShowViewModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -967,13 +967,13 @@ QR Code: ${invoice.qrCode}
         { 
           text: 'حذف', 
           style: 'destructive',
-          onPress: () => {
-            // Find the corresponding sale and delete it
-            const correspondingSale = sales.find(s => s.invoiceNumber === invoice.invoiceNumber);
-            if (correspondingSale) {
-              deleteSale(correspondingSale.id);
+          onPress: async () => {
+            try {
+              await deleteSale(invoice.id);
+              Alert.alert('نجح', 'تم حذف الفاتورة بنجاح');
+            } catch (error) {
+              Alert.alert('خطأ', 'فشل في حذف الفاتورة');
             }
-            Alert.alert('نجح', 'تم حذف الفاتورة بنجاح');
           }
         },
       ]

@@ -669,8 +669,8 @@ export default function POS() {
       tax: taxAmount,
       total: finalTotal,
       paidAmount: paymentMethod === 'credit' ? 0 : paidAmountNum,
-      remainingAmount: paymentMethod === 'credit' ? finalTotal : finalTotal - paidAmountNum,
-      paymentMethod,
+      remainingAmount: paymentMethod === 'credit' ? finalTotal : Math.max(0, finalTotal - paidAmountNum),
+      remainingAmount: finalTotal - paidAmountNum, // Allow negative for change due
       cashierId: '1',
       cashier: { id: '1', name: 'Admin', email: 'admin@micropos.com', role: 'admin' },
       status: 'completed',

@@ -48,9 +48,9 @@ interface AppContextType {
   addSupplier: (supplier: Supplier) => void;
   updateSupplier: (supplier: Supplier) => void;
   deleteSupplier: (id: string) => void;
+  deleteSale: (id: string) => void;
   addSale: (sale: Sale) => void;
   updateSale: (sale: Sale) => void;
-  deleteSale: (id: string) => void;
   addCashboxTransaction: (transaction: CashboxTransaction) => void;
   updateCashboxTransaction: (transaction: CashboxTransaction) => void;
   deleteCashboxTransaction: (id: string) => void;
@@ -682,6 +682,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     dbOperations.updateSupplier(supplier);
   };
 
+  const deleteSale = async (id: string) => {
+    await dbOperations.deleteSale(id);
+    setSales(prev => prev.filter(s => s.id !== id));
+  };
+
   const deleteSupplier = (id: string) => {
     setSuppliers(prev => prev.filter(s => s.id !== id));
     dbOperations.deleteSupplier(id);
@@ -756,11 +761,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const updateSale = (sale: Sale) => {
     setSales(prev => prev.map(s => s.id === sale.id ? sale : s));
     dbOperations.updateSale(sale);
-  };
-
-  const deleteSale = (id: string) => {
-    setSales(prev => prev.filter(s => s.id !== id));
-    dbOperations.deleteSale(id);
   };
 
   const handleReturnSale = (sale: Sale) => {
@@ -1069,9 +1069,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         addSupplier,
         updateSupplier,
         deleteSupplier,
+        deleteSale,
         addSale,
         updateSale,
-        deleteSale,
         addCashboxTransaction,
         updateCashboxTransaction,
         deleteCashboxTransaction,
