@@ -650,6 +650,7 @@ ${settings.receiptFooterAr}
             try {
               // Update sale status to returned
               const updatedSale = { ...sale, status: 'returned' as const };
+              console.log('Updating sale status:', updatedSale);
               updateSale(updatedSale);
               
               // Return products to stock
@@ -657,6 +658,7 @@ ${settings.receiptFooterAr}
                 const product = products.find(p => p.id === item.productId);
                 if (product) {
                   updateProduct({
+                    console.log('Returning product to stock:', product.nameAr, 'quantity:', item.quantity);
                     ...product,
                     stock: product.stock + item.quantity
                   });
@@ -667,6 +669,7 @@ ${settings.receiptFooterAr}
               if (sale.customerId && sale.customer) {
                 const customer = customers.find(c => c.id === sale.customerId);
                 if (customer) {
+                  console.log('Updating customer balance for:', customer.nameAr, 'remainingAmount:', sale.remainingAmount);
                   updateCustomer({
                     ...customer,
                     currentBalance: Math.max(0, customer.currentBalance - sale.remainingAmount),
@@ -678,6 +681,7 @@ ${settings.receiptFooterAr}
               // Add cashbox transaction for returned amount
               if (sale.paidAmount > 0) {
                 addCashboxTransaction({
+                  console.log('Adding cashbox transaction for return:', sale.paidAmount);
                   id: Date.now().toString(),
                   type: 'subtract',
                   amount: sale.paidAmount,
@@ -690,9 +694,11 @@ ${settings.receiptFooterAr}
                 });
               }
               
+              setSelectedDetailedInvoice(updatedSale); // Update the local state for the modal
               setShowDetailedInvoiceModal(false);
               Alert.alert('نجح', 'تم إرجاع الفاتورة بنجاح');
             } catch (error) {
+              console.error('Error during sale return:', error);
               Alert.alert('خطأ', 'فشل في إرجاع الفاتورة');
             }
           }
