@@ -680,8 +680,8 @@ ${settings.receiptFooterAr}
 
               // Add cashbox transaction for returned amount
               if (sale.paidAmount > 0) {
+                console.log('Adding cashbox transaction for return:', sale.paidAmount);
                 addCashboxTransaction({
-                  console.log('Adding cashbox transaction for return:', sale.paidAmount);
                   id: Date.now().toString(),
                   type: 'subtract',
                   amount: sale.paidAmount,
