@@ -679,8 +679,7 @@ export default function POS() {
                   <Text style={styles.productPrice}>
                     {product.price.toFixed(2)} {settings.currencySymbol}
                   </Text>
-                  <TouchableOpacity 
-                    style={styles.addButton}
+                  <TouchableOpacity
                     onPress={() => addToCart(product)}
                   >
                     style={styles.addButton}
