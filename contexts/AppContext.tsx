@@ -550,11 +550,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
         
       } catch (error) {
+        console.error('Error importing data:', error);
         console.error('Error initializing database:', error);
       }
     };
     
     initializeDatabase();
+    console.error('Error reading file:', error);
   }, []);
 
   const t = (key: string): string => {

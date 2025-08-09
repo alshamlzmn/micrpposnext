@@ -922,6 +922,80 @@ export default function Inventory() {
           </View>
         </View>
       </Modal>
+
+      {/* Barcode Generator Modal */}
+      <Modal visible={showBarcodeModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>صانع الباركود</Text>
+              <TouchableOpacity 
+                style={styles.closeButton}
+                onPress={() => setShowBarcodeModal(false)}
+            <ScrollView style={{ maxHeight: 400 }}>
+              <Input
+                label="رقم الباركود"
+                value={barcodeData.code}
+                onChangeText={(text) => setBarcodeData(prev => ({ ...prev, code: text }))}
+                placeholder="أدخل رقم الباركود"
+                keyboardType="numeric"
+              />
+              >
+              <Input
+                label="اسم المنتج (للملصق)"
+                value={barcodeData.productName}
+                onChangeText={(text) => setBarcodeData(prev => ({ ...prev, productName: text }))}
+                placeholder="اسم المنتج"
+              />
+                <X size={24} color="#666" />
+              <View style={styles.generateButtons}>
+                <Button
+                  title="إنشاء باركود"
+                  onPress={handleGenerateBarcode}
+                  variant="outline"
+                  style={styles.generateButton}
+                />
+                <Button
+                  title="رقم عشوائي"
+                  onPress={generateRandomBarcode}
+                  variant="outline"
+                  style={styles.generateButton}
+                />
+              </View>
+              </TouchableOpacity>
+              {generatedBarcode && (
+                <View style={styles.barcodeContainer}>
+                  <Image 
+                    source={{ uri: generatedBarcode }} 
+                    style={styles.barcodeImage}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.barcodeText}>
+                    {barcodeData.productName && `${barcodeData.productName}\n`}
+                    {barcodeData.code}
+                  </Text>
+                </View>
+              )}
+            </ScrollView>
+            </View>
+            <View style={styles.modalButtons}>
+              <Button
+                title="إغلاق"
+                onPress={() => setShowBarcodeModal(false)}
+                variant="outline"
+                style={styles.modalButton}
+              />
+              {generatedBarcode && (
+                <Button
+                  title="طباعة"
+                  onPress={handlePrintBarcode}
+                  style={styles.modalButton}
+                />
+              )}
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

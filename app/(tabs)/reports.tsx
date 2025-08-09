@@ -436,6 +436,158 @@ ${cashboxTransactions.map(transaction =>
           </View>
         </Card>
 
+        <Text style={styles.sectionTitle}>تقرير المبيعات حسب طريقة الدفع</Text>
+        <Card style={{ marginBottom: 24, padding: 16 }}>
+          <View style={styles.summaryRow}>
+            <Text style={[styles.summaryValue, { color: '#10B981' }]}>
+              {cashSales.length} ({cashRevenue.toFixed(2)} {settings.currencySymbol})
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Banknote size={16} color="#10B981" />
+              <Text style={styles.summaryLabel}>المبيعات النقدية</Text>
+            </View>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={[styles.summaryValue, { color: '#5865F2' }]}>
+              {cardSales.length} ({cardRevenue.toFixed(2)} {settings.currencySymbol})
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <CreditCard size={16} color="#5865F2" />
+              <Text style={styles.summaryLabel}>مبيعات البطاقة</Text>
+            </View>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={[styles.summaryValue, { color: '#8B5CF6' }]}>
+              {transferSales.length} ({transferRevenue.toFixed(2)} {settings.currencySymbol})
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Smartphone size={16} color="#8B5CF6" />
+              <Text style={styles.summaryLabel}>التحويل البنكي</Text>
+            </View>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={[styles.summaryValue, { color: '#F59E0B' }]}>
+              {creditSales.length} ({creditRevenue.toFixed(2)} {settings.currencySymbol})
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Clock size={16} color="#F59E0B" />
+              <Text style={styles.summaryLabel}>المبيعات الآجلة</Text>
+            </View>
+        <Text style={styles.sectionTitle}>تقرير الأرباح والتكاليف</Text>
+        <Card style={{ marginBottom: 24, padding: 16 }}>
+          <View style={styles.summaryRow}>
+            <Text style={[styles.summaryValue, { color: '#EF4444' }]}>
+              {totalCost.toFixed(2)} {settings.currencySymbol}
+            </Text>
+            <Text style={styles.summaryLabel}>إجمالي التكلفة</Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={[styles.summaryValue, { color: '#5865F2' }]}>
+              {totalRevenue.toFixed(2)} {settings.currencySymbol}
+            </Text>
+            <Text style={styles.summaryLabel}>إجمالي المبيعات</Text>
+          </View>
+          <View style={[styles.summaryRow, { borderTopWidth: 1, borderTopColor: '#E0E0E0', paddingTop: 8, marginTop: 8 }]}>
+            <Text style={[styles.summaryValue, { color: '#10B981', fontSize: 20 }]}>
+              {totalProfit.toFixed(2)} {settings.currencySymbol}
+            </Text>
+            <Text style={[styles.summaryLabel, { fontWeight: 'bold' }]}>صافي الربح</Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={[styles.summaryValue, { color: '#666' }]}>
+              {totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : '0'}%
+            </Text>
+            <Text style={styles.summaryLabel}>هامش الربح</Text>
+          </View>
+        </Card>
+          </View>
+        <Text style={styles.sectionTitle}>تقرير جرد المخزون</Text>
+        <Card style={{ marginBottom: 24, padding: 16 }}>
+          <View style={styles.summaryRow}>
+            <Text style={[styles.summaryValue, { color: '#5865F2' }]}>
+              {totalInventoryValue.toFixed(2)} {settings.currencySymbol}
+            </Text>
+            <Text style={styles.summaryLabel}>إجمالي قيمة المخزون</Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={[styles.summaryValue, { color: '#10B981' }]}>
+              {totalSoldQuantity}
+            </Text>
+            <Text style={styles.summaryLabel}>إجمالي الكمية المباعة</Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={[styles.summaryValue, { color: '#EF4444' }]}>
+              {totalReturnedQuantity}
+            </Text>
+            <Text style={styles.summaryLabel}>إجمالي الكمية المرجعة</Text>
+          </View>
+          
+          <Text style={[styles.sectionTitle, { fontSize: 14, marginTop: 16, marginBottom: 8 }]}>
+            تفاصيل المنتجات
+          </Text>
+          <ScrollView style={{ maxHeight: 200 }}>
+            {products.map((product) => {
+              const soldQty = sales.reduce((sum, sale) => {
+                return sum + sale.items
+                  .filter(item => item.productId === product.id)
+                  .reduce((itemSum, item) => itemSum + item.quantity, 0);
+              }, 0);
+              
+              const returnedQty = sales
+                .filter(sale => sale.status === 'returned')
+                .reduce((sum, sale) => {
+                  return sum + sale.items
+                    .filter(item => item.productId === product.id)
+                    .reduce((itemSum, item) => itemSum + item.quantity, 0);
+                }, 0);
+              
+              const totalQty = product.stock + soldQty;
+              const inventoryValue = product.cost * product.stock;
+              
+              return (
+                <View key={product.id} style={{
+                  backgroundColor: '#F8F9FA',
+                  padding: 12,
+                  borderRadius: 8,
+                  marginBottom: 8,
+                  borderWidth: 1,
+                  borderColor: '#E0E0E0',
+                }}>
+                  <Text style={{ fontSize: 14, fontWeight: 'bold', textAlign: 'right', marginBottom: 4 }}>
+                    {product.nameAr}
+                  </Text>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 }}>
+                    <Text style={{ fontSize: 12, color: '#666' }}>{product.stock}</Text>
+                    <Text style={{ fontSize: 12, color: '#666' }}>المخزون الحالي:</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 }}>
+                    <Text style={{ fontSize: 12, color: '#666' }}>{soldQty}</Text>
+                    <Text style={{ fontSize: 12, color: '#666' }}>الكمية المباعة:</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 }}>
+                    <Text style={{ fontSize: 12, color: '#666' }}>{returnedQty}</Text>
+                    <Text style={{ fontSize: 12, color: '#666' }}>الكمية المرجعة:</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 }}>
+                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#5865F2' }}>{totalQty}</Text>
+                    <Text style={{ fontSize: 12, fontWeight: 'bold' }}>إجمالي الكمية:</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 }}>
+                    <Text style={{ fontSize: 12, color: '#666' }}>{product.cost.toFixed(2)} {settings.currencySymbol}</Text>
+                    <Text style={{ fontSize: 12, color: '#666' }}>سعر التكلفة:</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#10B981' }}>
+                      {inventoryValue.toFixed(2)} {settings.currencySymbol}
+                    </Text>
+                    <Text style={{ fontSize: 12, fontWeight: 'bold' }}>قيمة المخزون:</Text>
+                  </View>
+                </View>
+              );
+            })}
+          </ScrollView>
+        </Card>
+        </Card>
         <View style={styles.exportSection}>
           <Text style={styles.sectionTitle}>تصدير التقارير</Text>
           <View style={styles.exportButtons}>
