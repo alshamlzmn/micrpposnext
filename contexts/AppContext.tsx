@@ -668,7 +668,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteCustomer = (id: string) => {
-    return new Promise<void>(async (resolve, reject) => {
+    return new Promise<void>(async (resolve, reject) => { // Make sure this is async
       try {
         await dbOperations.deleteCustomerAndRelatedData(id);
         

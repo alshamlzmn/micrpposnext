@@ -120,7 +120,7 @@ export const dbOperations = {
     await db.customers.delete(id);
   },
 
-  async deleteCustomerAndRelatedData(customerId: string): Promise<void> {
+  async deleteCustomerAndRelatedData(customerId: string) {
     await db.transaction('rw', db.customers, db.sales, db.cashboxTransactions, async () => {
       // Delete the customer
       await db.customers.delete(customerId);
