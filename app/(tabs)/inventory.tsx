@@ -548,6 +548,78 @@ export default function Inventory() {
     }
   };
 
+  const handleGenerateBarcode = () => {
+    if (!barcodeData.code) {
+      Alert.alert('خطأ', 'يرجى إدخال رقم الباركود');
+      return;
+    }
+
+    try {
+      const canvas = document.createElement('canvas');
+      JsBarcode(canvas, barcodeData.code, {
+        format: 'CODE128',
+        width: 2,
+        height: 100,
+        displayValue: true,
+      });
+      setGeneratedBarcode(canvas.toDataURL());
+    } catch (error) {
+      Alert.alert('خطأ', 'فشل في إنشاء الباركود');
+    }
+  };
+
+  const generateRandomBarcode = () => {
+    const randomCode = Math.floor(Math.random() * 1000000000000).toString().padStart(12, '0');
+    setBarcodeData(prev => ({ ...prev, code: randomCode }));
+  };
+
+  const handlePrintBarcode = () => {
+    if (Platform.OS === 'web') {
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(`
+          <html>
+            <head>
+              <title>طباعة الباركود</title>
+              <style>
+                body { 
+                  display: flex; 
+                  justify-content: center; 
+                  align-items: center; 
+                  height: 100vh; 
+                  margin: 0; 
+                  font-family: Arial, sans-serif;
+                }
+                .barcode-container {
+                  text-align: center;
+                  padding: 20px;
+                  border: 1px solid #ccc;
+                }
+                .barcode-text {
+                  margin-top: 10px;
+                  font-size: 14px;
+                }
+              </style>
+            </head>
+            <body>
+              <div class="barcode-container">
+                <img src="${generatedBarcode}" alt="Barcode" />
+                <div class="barcode-text">
+                  ${barcodeData.productName ? `${barcodeData.productName}<br>` : ''}
+                  ${barcodeData.code}
+                </div>
+              </div>
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+        printWindow.print();
+      }
+    } else {
+      Alert.alert('معلومات', 'الطباعة متاحة على الويب فقط');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -932,6 +1004,11 @@ export default function Inventory() {
               <TouchableOpacity 
                 style={styles.closeButton}
                 onPress={() => setShowBarcodeModal(false)}
+              >
+                <X size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
             <ScrollView style={{ maxHeight: 400 }}>
               <Input
                 label="رقم الباركود"
@@ -940,14 +1017,14 @@ export default function Inventory() {
                 placeholder="أدخل رقم الباركود"
                 keyboardType="numeric"
               />
-              >
+
               <Input
                 label="اسم المنتج (للملصق)"
                 value={barcodeData.productName}
                 onChangeText={(text) => setBarcodeData(prev => ({ ...prev, productName: text }))}
                 placeholder="اسم المنتج"
               />
-                <X size={24} color="#666" />
+
               <View style={styles.generateButtons}>
                 <Button
                   title="إنشاء باركود"
@@ -962,7 +1039,7 @@ export default function Inventory() {
                   style={styles.generateButton}
                 />
               </View>
-              </TouchableOpacity>
+
               {generatedBarcode && (
                 <View style={styles.barcodeContainer}>
                   <Image 
@@ -977,7 +1054,7 @@ export default function Inventory() {
                 </View>
               )}
             </ScrollView>
-            </View>
+
             <View style={styles.modalButtons}>
               <Button
                 title="إغلاق"
