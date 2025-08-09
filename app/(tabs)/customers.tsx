@@ -1007,3 +1007,5 @@ export default function Customers() {
         </View>
       </Modal>
     </SafeAreaView>
+  );
+}
