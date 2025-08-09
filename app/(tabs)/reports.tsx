@@ -227,6 +227,38 @@ export default function Reports() {
         : balance - transaction.amount;
     }, 0);
 
+  // Calculate sales by payment method
+  const cashSales = sales.filter(sale => sale.paymentMethod === 'cash');
+  const cardSales = sales.filter(sale => sale.paymentMethod === 'card');
+  const transferSales = sales.filter(sale => sale.paymentMethod === 'transfer');
+  const creditSales = sales.filter(sale => sale.paymentMethod === 'credit');
+
+  // Calculate revenue by payment method
+  const cashRevenue = cashSales.reduce((sum, sale) => sum + sale.total, 0);
+  const cardRevenue = cardSales.reduce((sum, sale) => sum + sale.total, 0);
+  const transferRevenue = transferSales.reduce((sum, sale) => sum + sale.total, 0);
+  const creditRevenue = creditSales.reduce((sum, sale) => sum + sale.total, 0);
+
+  // Calculate cost and profit
+  const totalCost = sales.reduce((sum, sale) => {
+    return sum + sale.items.reduce((itemSum, item) => {
+      const product = products.find(p => p.id === item.productId);
+      return itemSum + (product ? product.cost * item.quantity : 0);
+    }, 0);
+  }, 0);
+  const totalProfit = totalRevenue - totalCost;
+
+  // Calculate inventory metrics
+  const totalInventoryValue = products.reduce((sum, product) => sum + (product.cost * product.stock), 0);
+  const totalSoldQuantity = sales.reduce((sum, sale) => {
+    return sum + sale.items.reduce((itemSum, item) => itemSum + item.quantity, 0);
+  }, 0);
+  const totalReturnedQuantity = sales
+    .filter(sale => sale.status === 'returned')
+    .reduce((sum, sale) => {
+      return sum + sale.items.reduce((itemSum, item) => itemSum + item.quantity, 0);
+    }, 0);
+
   const stats = [
     {
       title: 'إجمالي المبيعات',
