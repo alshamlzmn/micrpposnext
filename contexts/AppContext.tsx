@@ -1064,7 +1064,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Error importing data:', error);
-      throw new Error(error instanceof Error ? error.message : 'فشل في استيراد البيانات');
+      const errorMessage = error instanceof Error ? error.message : 'خطأ غير معروف';
+      Alert.alert(
+        'خطأ في الاستيراد',
+        `فشل في استيراد البيانات:\n\n${errorMessage}\n\nتأكد من أن الملف صحيح ومن نفس إصدار التطبيق.`,
+        [{ text: 'موافق' }]
+      );
+      throw new Error(errorMessage);
     }
   };
 

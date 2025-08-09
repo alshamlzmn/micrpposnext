@@ -32,6 +32,7 @@ export default function Inventory() {
   const [barcodeData, setBarcodeData] = useState({
     code: '',
     productName: '',
+    printQuantity: '1',
   });
   const [generatedBarcode, setGeneratedBarcode] = useState<string>('');
   const [formData, setFormData] = useState({
@@ -574,9 +575,21 @@ export default function Inventory() {
   };
 
   const handlePrintBarcode = () => {
+    const quantity = parseInt(barcodeData.printQuantity) || 1;
+    
     if (Platform.OS === 'web') {
       const printWindow = window.open('', '_blank');
       if (printWindow) {
+        const barcodeHTML = Array.from({ length: quantity }, (_, index) => `
+          <div class="barcode-container" style="page-break-after: ${index < quantity - 1 ? 'always' : 'auto'};">
+            <img src="${generatedBarcode}" alt="Barcode" />
+            <div class="barcode-text">
+              ${barcodeData.productName ? `${barcodeData.productName}<br>` : ''}
+              ${barcodeData.code}
+            </div>
+          </div>
+        `).join('');
+        
         printWindow.document.write(`
           <html>
             <head>
@@ -598,17 +611,12 @@ export default function Inventory() {
                 .barcode-text {
                   margin-top: 10px;
                   font-size: 14px;
+                  font-weight: bold;
                 }
               </style>
             </head>
             <body>
-              <div class="barcode-container">
-                <img src="${generatedBarcode}" alt="Barcode" />
-                <div class="barcode-text">
-                  ${barcodeData.productName ? `${barcodeData.productName}<br>` : ''}
-                  ${barcodeData.code}
-                </div>
-              </div>
+              ${barcodeHTML}
             </body>
           </html>
         `);
@@ -1024,6 +1032,14 @@ export default function Inventory() {
                 value={barcodeData.productName}
                 onChangeText={(text) => setBarcodeData(prev => ({ ...prev, productName: text }))}
                 placeholder="اسم المنتج"
+              />
+
+              <Input
+                label="عدد النسخ للطباعة"
+                value={barcodeData.printQuantity}
+                onChangeText={(text) => setBarcodeData(prev => ({ ...prev, printQuantity: text }))}
+                placeholder="1"
+                keyboardType="numeric"
               />
 
               <View style={styles.generateButtons}>

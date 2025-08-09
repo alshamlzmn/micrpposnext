@@ -443,6 +443,7 @@ export default function Customers() {
           style: 'destructive',
           onPress: () => {
             deleteCustomer(customer.id);
+            setShowViewModal(false);
             Alert.alert('نجح', 'تم حذف العميل بنجاح');
           }
         },

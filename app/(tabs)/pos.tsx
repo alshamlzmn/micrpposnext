@@ -629,7 +629,6 @@ export default function POS() {
               <TouchableOpacity
                 key={product.id}
                 style={styles.productGridItem}
-                onPress={() => addToCart(product)}
                 activeOpacity={0.7}
               >
                 {product.image ? (
@@ -644,8 +643,7 @@ export default function POS() {
                 </Text>
                 <Text style={styles.productPrice}>
                   {product.price.toFixed(2)} {settings.currencySymbol}
-                </Text>
-                <TouchableOpacity style={styles.addButton}>
+                  style={styles.addButton}
                   <Text style={styles.addButtonText}>إضافة</Text>
                 </TouchableOpacity>
               </TouchableOpacity>
@@ -798,7 +796,6 @@ export default function POS() {
             <TouchableOpacity
               style={[
                 styles.categoryButton,
-                selectedCategory === 'all' && styles.categoryButtonActive,
               ]}
               onPress={() => setSelectedCategory('all')}
             >
@@ -807,6 +804,9 @@ export default function POS() {
                   styles.categoryButtonText,
                   selectedCategory === 'all' && styles.categoryButtonTextActive,
                 ]}
+              <TouchableOpacity 
+                style={styles.addButton}
+                onPress={() => addToCart(product)}
               >
                 الكل
               </Text>
