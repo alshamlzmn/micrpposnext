@@ -4,11 +4,11 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
+  TouchableOpacity, 
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Package, Users, Calendar, Download, FileText, ChartBar as BarChart3 } from 'lucide-react-native';
+import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Package, Users, Calendar, Download, FileText, ChartBar as BarChart3, Banknote, CreditCard, Smartphone, Clock } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
