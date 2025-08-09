@@ -629,7 +629,6 @@ export default function POS() {
               <TouchableOpacity
                 key={product.id}
                 style={styles.productGridItem}
-                onPress={() => addToCart(product)}
                 activeOpacity={0.7}
               >
                 {product.image ? (
@@ -667,7 +666,6 @@ export default function POS() {
                 <TouchableOpacity
                   key={product.id}
                   style={styles.productGridItem}
-                  onPress={() => addToCart(product)}
                   activeOpacity={0.7}
                 >
                   {product.image ? (

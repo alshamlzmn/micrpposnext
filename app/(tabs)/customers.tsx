@@ -435,16 +435,20 @@ export default function Customers() {
   const handleDeleteCustomer = (customer: Customer) => {
     Alert.alert(
       'تأكيد الحذف',
-      `هل أنت متأكد من حذف العميل ${customer.nameAr}؟`,
+      `هل أنت متأكد من حذف العميل ${customer.nameAr}؟\n\nسيتم حذف:\n• بيانات العميل\n• جميع فواتير العميل\n• جميع المعاملات المرتبطة\n\nهذا الإجراء لا يمكن التراجع عنه.`,
       [
         { text: 'إلغاء', style: 'cancel' },
         { 
           text: 'حذف', 
           style: 'destructive',
-          onPress: () => {
-            deleteCustomer(customer.id);
-            setShowViewModal(false);
-            Alert.alert('نجح', 'تم حذف العميل بنجاح');
+          onPress: async () => {
+            try {
+              await deleteCustomer(customer.id);
+              setShowViewModal(false);
+              Alert.alert('نجح', 'تم حذف العميل وجميع البيانات المرتبطة به بنجاح');
+            } catch (error) {
+              Alert.alert('خطأ', 'فشل في حذف العميل. يرجى المحاولة مرة أخرى.');
+            }
           }
         },
       ]

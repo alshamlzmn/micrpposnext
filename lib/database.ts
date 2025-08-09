@@ -120,6 +120,30 @@ export const dbOperations = {
     await db.customers.delete(id);
   },
 
+  async deleteCustomerAndRelatedData(customerId: string): Promise<void> {
+    await db.transaction('rw', db.customers, db.sales, db.cashboxTransactions, async () => {
+      // Delete the customer
+      await db.customers.delete(customerId);
+      
+      // Delete all sales related to this customer
+      const customerSales = await db.sales.where('customerId').equals(customerId).toArray();
+      const saleIds = customerSales.map(sale => sale.id);
+      if (saleIds.length > 0) {
+        await db.sales.bulkDelete(saleIds);
+      }
+      
+      // Delete all cashbox transactions related to this customer
+      const customerTransactions = await db.cashboxTransactions
+        .where('source').equals('customer')
+        .and(transaction => transaction.referenceId === customerId)
+        .toArray();
+      const transactionIds = customerTransactions.map(transaction => transaction.id);
+      if (transactionIds.length > 0) {
+        await db.cashboxTransactions.bulkDelete(transactionIds);
+      }
+    });
+  },
+
   // Suppliers
   async getAllSuppliers(): Promise<Supplier[]> {
     return await db.suppliers.toArray();

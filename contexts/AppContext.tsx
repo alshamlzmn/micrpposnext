@@ -668,8 +668,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteCustomer = (id: string) => {
-    setCustomers(prev => prev.filter(c => c.id !== id));
-    dbOperations.deleteCustomer(id);
+    return new Promise<void>(async (resolve, reject) => {
+      try {
+        await dbOperations.deleteCustomerAndRelatedData(id);
+        
+        // Update local state - remove customer and related data
+        setCustomers(prev => prev.filter(c => c.id !== id));
+        setSales(prev => prev.filter(s => s.customerId !== id));
+        setCashboxTransactions(prev => prev.filter(t => 
+          !(t.source === 'customer' && t.referenceId === id)
+        ));
+        
+        resolve();
+      } catch (error) {
+        console.error('Error deleting customer:', error);
+        reject(error);
+      }
+    });
   };
 
   const addSupplier = (supplier: Supplier) => {
