@@ -10,7 +10,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, DollarSign, CreditCard, Eye, UserPlus, X, Phone, Mail, MapPin, User, TrendingUp, Edit, Trash2 } from 'lucide-react-native';
+import { Plus, DollarSign, CreditCard, Eye, UserPlus, X, Phone, Mail, MapPin, User, TrendingUp, CreditCard as Edit, Trash2 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
