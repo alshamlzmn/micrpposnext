@@ -556,7 +556,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
     
     initializeDatabase();
-    console.error('Error reading file:', error);
   }, []);
 
   const t = (key: string): string => {
