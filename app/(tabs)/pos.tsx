@@ -1225,20 +1225,28 @@ export default function POS() {
             </View>
             
             <View style={{ flex: 1, position: 'relative' }}>
-              <CameraView
-                style={styles.camera}
-                facing="back"
-                onBarcodeScanned={(result) => {
-                  const scannedProduct = products.find(p => p.barcode === result.data);
-                  if (scannedProduct) {
-                    addToCart(scannedProduct);
-                    setShowBarcodeScanner(false);
-                    Alert.alert('نجح', `تم إضافة ${scannedProduct.nameAr} إلى السلة`);
-                  } else {
-                    Alert.alert('غير موجود', 'المنتج غير موجود في المخزون');
-                  }
-                }}
-              />
+              {Platform.OS !== 'web' ? (
+                <CameraView
+                  style={styles.camera}
+                  facing="back"
+                  onBarcodeScanned={(result) => {
+                    const scannedProduct = products.find(p => p.barcode === result.data);
+                    if (scannedProduct) {
+                      addToCart(scannedProduct);
+                      setShowBarcodeScanner(false);
+                      Alert.alert('نجح', `تم إضافة ${scannedProduct.nameAr} إلى السلة`);
+                    } else {
+                      Alert.alert('غير موجود', 'المنتج غير موجود في المخزون');
+                    }
+                  }}
+                />
+              ) : (
+                <View style={[styles.camera, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }]}>
+                  <Text style={{ color: '#FFFFFF', fontSize: 16, textAlign: 'center', fontFamily: 'Cairo-Regular' }}>
+                    مسح الباركود غير متاح على الويب
+                  </Text>
+                </View>
+              )}
               
               <View style={styles.scannerOverlay}>
                 <View style={styles.scannerFrame} />
