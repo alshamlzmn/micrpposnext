@@ -579,8 +579,13 @@ ${settings.receiptFooterAr}
               <div class="invoice">
                 <div class="header">
                   <h2>${settings.businessNameAr}</h2>
+                  <p style="font-size: 14px; margin: 2px 0;">${settings.businessName}</p>
                   <p>${settings.businessAddressAr}</p>
+                  <p style="font-size: 12px;">${settings.businessAddress}</p>
                   <p>${settings.businessPhone}</p>
+                  <p style="font-size: 12px;">${settings.businessEmail}</p>
+                  <p style="font-weight: bold; color: #5865F2;">الرقم الضريبي: ${settings.vatNumber}</p>
+                  <p style="font-weight: bold; color: #5865F2;">رقم السجل التجاري: ${settings.crNumber}</p>
                 </div>
                 <div class="row"><span>رقم الفاتورة:</span><span>${sale.invoiceNumber}</span></div>
                 <div class="row"><span>التاريخ:</span><span>${formatDate(sale.date)}</span></div>
@@ -828,8 +833,17 @@ ${settings.receiptFooterAr}
               <ScrollView style={{ maxHeight: 500 }}>
                 <View style={styles.invoiceHeaderSection}>
                   <Text style={styles.businessName}>{settings.businessNameAr}</Text>
+                  <Text style={styles.businessInfo}>{settings.businessName}</Text>
                   <Text style={styles.businessInfo}>{settings.businessAddressAr}</Text>
+                  <Text style={styles.businessInfo}>{settings.businessAddress}</Text>
                   <Text style={styles.businessInfo}>{settings.businessPhone}</Text>
+                  <Text style={styles.businessInfo}>{settings.businessEmail}</Text>
+                  <Text style={[styles.businessInfo, { color: '#5865F2', fontWeight: 'bold' }]}>
+                    الرقم الضريبي: {settings.vatNumber}
+                  </Text>
+                  <Text style={[styles.businessInfo, { color: '#5865F2', fontWeight: 'bold' }]}>
+                    رقم السجل التجاري: {settings.crNumber}
+                  </Text>
                 </View>
 
                 <View style={styles.invoiceInfo}>

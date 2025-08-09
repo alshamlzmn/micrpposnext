@@ -26,6 +26,7 @@ import {
   Package,
   Users,
 } from 'lucide-react-native';
+import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { useApp } from '@/contexts/AppContext';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -60,6 +61,8 @@ export default function POS() {
   const [discount, setDiscount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'transfer' | 'credit'>('cash');
   const [paidAmount, setPaidAmount] = useState('');
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  const [permission, requestPermission] = useCameraPermissions();
 
   const styles = StyleSheet.create({
     container: {
@@ -523,6 +526,67 @@ export default function POS() {
     modalButton: {
       flex: 1,
     },
+    barcodeScannerModal: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.9)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    scannerContainer: {
+      width: '90%',
+      height: '70%',
+      borderRadius: 16,
+      overflow: 'hidden',
+    },
+    scannerHeader: {
+      backgroundColor: '#5865F2',
+      padding: 16,
+      alignItems: 'center',
+    },
+    scannerTitle: {
+      color: '#FFFFFF',
+      fontSize: 18,
+      fontWeight: 'bold',
+      fontFamily: 'Cairo-Bold',
+    },
+    camera: {
+      flex: 1,
+    },
+    scannerOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    scannerFrame: {
+      width: 250,
+      height: 250,
+      borderWidth: 2,
+      borderColor: '#10B981',
+      borderRadius: 16,
+      backgroundColor: 'transparent',
+    },
+    scannerInstructions: {
+      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      padding: 12,
+      borderRadius: 8,
+      marginTop: 20,
+    },
+    scannerInstructionsText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      textAlign: 'center',
+      fontFamily: 'Cairo-Regular',
+    },
+    scannerActions: {
+      backgroundColor: '#5865F2',
+      padding: 16,
+      flexDirection: 'row',
+      justifyContent: 'center',
+    },
   });
 
   const filteredProducts = products.filter(product => {
@@ -615,7 +679,13 @@ export default function POS() {
                   <Text style={styles.productPrice}>
                     {product.price.toFixed(2)} {settings.currencySymbol}
                   </Text>
-                  <TouchableOpacity style={styles.addButton}>
+                  <TouchableOpacity 
+                    style={styles.addButton}
+                    onPress={() => addToCart(product)}
+                  >
+                    style={styles.addButton}
+                    onPress={() => addToCart(product)}
+                  >
                     <Text style={styles.addButtonText}>إضافة</Text>
                   </TouchableOpacity>
                 </TouchableOpacity>
@@ -669,7 +739,6 @@ export default function POS() {
       tax: taxAmount,
       total: finalTotal,
       paidAmount: paymentMethod === 'credit' ? 0 : paidAmountNum,
-      remainingAmount: paymentMethod === 'credit' ? finalTotal : Math.max(0, finalTotal - paidAmountNum),
       remainingAmount: finalTotal - paidAmountNum, // Allow negative for change due
       cashierId: '1',
       cashier: { id: '1', name: 'Admin', email: 'admin@micropos.com', role: 'admin' },
@@ -702,7 +771,16 @@ export default function POS() {
             onChangeText={setSearchQuery}
             icon={<Search size={20} color="#666" />}
           />
-          <TouchableOpacity style={[styles.actionButton, styles.cameraButton]}>
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.cameraButton]}
+            onPress={() => {
+              if (permission?.granted) {
+                setShowBarcodeScanner(true);
+              } else {
+                requestPermission();
+              }
+            }}
+          >
             <Camera size={20} color="#FFFFFF" />
           </TouchableOpacity>
           <TouchableOpacity style={[styles.actionButton, styles.calculatorButton]}>
@@ -1134,6 +1212,51 @@ export default function POS() {
                 onPress={handleCompleteSale}
                 style={styles.modalButton}
                 icon={<CreditCard size={16} color="#FFFFFF" />}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Barcode Scanner Modal */}
+      <Modal visible={showBarcodeScanner} transparent animationType="fade">
+        <View style={styles.barcodeScannerModal}>
+          <View style={styles.scannerContainer}>
+            <View style={styles.scannerHeader}>
+              <Text style={styles.scannerTitle}>مسح الباركود</Text>
+            </View>
+            
+            <View style={{ flex: 1, position: 'relative' }}>
+              <CameraView
+                style={styles.camera}
+                facing="back"
+                onBarcodeScanned={(result) => {
+                  const scannedProduct = products.find(p => p.barcode === result.data);
+                  if (scannedProduct) {
+                    addToCart(scannedProduct);
+                    setShowBarcodeScanner(false);
+                    Alert.alert('نجح', `تم إضافة ${scannedProduct.nameAr} إلى السلة`);
+                  } else {
+                    Alert.alert('غير موجود', 'المنتج غير موجود في المخزون');
+                  }
+                }}
+              />
+              
+              <View style={styles.scannerOverlay}>
+                <View style={styles.scannerFrame} />
+                <View style={styles.scannerInstructions}>
+                  <Text style={styles.scannerInstructionsText}>
+                    وجه الكاميرا نحو الباركود
+                  </Text>
+                </View>
+              </View>
+            </View>
+            
+            <View style={styles.scannerActions}>
+              <Button
+                title="إغلاق"
+                onPress={() => setShowBarcodeScanner(false)}
+                variant="outline"
               />
             </View>
           </View>

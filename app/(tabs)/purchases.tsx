@@ -66,7 +66,6 @@ export default function Purchases() {
   const filteredProducts = selectedCategory === 'all' 
     ? products 
     : products.filter(product => {
-        console.log(`Comparing product.categoryId: '${product.categoryId}' (Type: ${typeof product.categoryId}) with selectedCategory: '${selectedCategory}' (Type: ${typeof selectedCategory})`);
         return String(product.categoryId) === String(selectedCategory);
     });
 
@@ -339,7 +338,6 @@ export default function Purchases() {
   });
 
   const addProductToPurchase = (product: any) => {
-    console.log('Adding product to purchase:', product);
     setSelectedProducts(prev => {
       const existing = prev.find(item => item.product.id === product.id);
       if (existing) {
@@ -451,12 +449,6 @@ export default function Purchases() {
 
   // Debug logging
   React.useEffect(() => {
-    console.log('All Products:', products);
-    console.log('All Categories:', categories);
-    console.log('Selected Category:', selectedCategory);
-    console.log('Filtered Products:', filteredProducts);
-    console.log('Selected Products:', selectedProducts);
-    console.log('Form Data:', formData);
   }, [products, categories, selectedCategory, filteredProducts, selectedProducts, formData]);
 
   // Calculate totals for preview

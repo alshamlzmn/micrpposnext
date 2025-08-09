@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, Filter, Plus, CreditCard as Edit, Trash2, TriangleAlert as AlertTriangle, Package, Camera, X, Upload, Tag } from 'lucide-react-native';
+import { QrCode } from 'lucide-react-native';
+import JsBarcode from 'jsbarcode';
 import { useApp } from '@/contexts/AppContext';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -24,8 +26,14 @@ export default function Inventory() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showProductModal, setShowProductModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showBarcodeModal, setShowBarcodeModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [barcodeData, setBarcodeData] = useState({
+    code: '',
+    productName: '',
+  });
+  const [generatedBarcode, setGeneratedBarcode] = useState<string>('');
   const [formData, setFormData] = useState({
     name: '',
     nameAr: '',
@@ -336,6 +344,33 @@ export default function Inventory() {
     pickerItemTextSelected: {
       color: '#FFFFFF',
     },
+    barcodeContainer: {
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    barcodeImage: {
+      width: 250,
+      height: 100,
+      backgroundColor: '#FFFFFF',
+      borderRadius: 8,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: '#E0E0E0',
+    },
+    barcodeText: {
+      fontSize: 14,
+      color: '#333',
+      fontFamily: 'Cairo-Regular',
+      textAlign: 'center',
+    },
+    generateButtons: {
+      flexDirection: 'row',
+      gap: 8,
+      marginBottom: 16,
+    },
+    generateButton: {
+      flex: 1,
+    },
   });
 
   const filteredProducts = products.filter(product => {
@@ -522,6 +557,12 @@ export default function Inventory() {
             title="تصنيف"
             onPress={() => setShowCategoryModal(true)}
             icon={<Tag size={16} color="#FFFFFF" />}
+            size="small"
+          />
+          <Button
+            title="باركود"
+            onPress={() => setShowBarcodeModal(true)}
+            icon={<QrCode size={16} color="#FFFFFF" />}
             size="small"
           />
           <Button

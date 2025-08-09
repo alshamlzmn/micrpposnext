@@ -717,6 +717,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             }
           : customer
       ));
+      
+      // Update customer in database
+      const customer = customers.find(c => c.id === sale.customerId);
+      if (customer) {
+        const updatedCustomer = {
+          ...customer,
+          currentBalance: customer.currentBalance + sale.total,
+          totalPurchases: customer.totalPurchases + sale.total
+        };
+        dbOperations.updateCustomer(updatedCustomer);
+      }
     } else if (sale.customerId && sale.remainingAmount > 0) {
       // For partial payments, add remaining amount to debt
       setCustomers(prev => prev.map(customer =>
@@ -728,6 +739,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             }
           : customer
       ));
+      
+      // Update customer in database
+      const customer = customers.find(c => c.id === sale.customerId);
+      if (customer) {
+        const updatedCustomer = {
+          ...customer,
+          currentBalance: customer.currentBalance + sale.remainingAmount,
+          totalPurchases: customer.totalPurchases + sale.total
+        };
+        dbOperations.updateCustomer(updatedCustomer);
+      }
     } else if (sale.customerId && sale.remainingAmount === 0) {
       // Update total purchases even if fully paid
       setCustomers(prev => prev.map(customer =>
@@ -735,6 +757,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           ? { ...customer, totalPurchases: customer.totalPurchases + sale.total }
           : customer
       ));
+      
+      // Update customer in database
+      const customer = customers.find(c => c.id === sale.customerId);
+      if (customer) {
+        const updatedCustomer = {
+          ...customer,
+          totalPurchases: customer.totalPurchases + sale.total
+        };
+        dbOperations.updateCustomer(updatedCustomer);
+      }
     }
 
     // Add cashbox transaction for the paid amount if auto-add is enabled

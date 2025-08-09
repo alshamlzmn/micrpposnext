@@ -728,7 +728,9 @@ export default function Invoices() {
           <div class="invoice">
             <div class="header">
               <h1>${invoice.supplierInfo.nameAr}</h1>
+              <div style="font-size: 14px; margin: 5px 0;">${invoice.supplierInfo.name}</div>
               <div>${invoice.supplierInfo.addressAr}</div>
+              <div style="font-size: 12px;">${invoice.supplierInfo.address}</div>
               <div>هاتف: ${invoice.supplierInfo.phone}</div>
               <div>بريد إلكتروني: ${invoice.supplierInfo.email}</div>
               <div class="vat">الرقم الضريبي: ${invoice.supplierInfo.vatNumber}</div>
@@ -1151,9 +1153,13 @@ QR Code: ${invoice.qrCode}
               <ScrollView style={{ maxHeight: 400 }}>
                 <View style={styles.invoiceHeaderSection}>
                   <Text style={styles.businessName}>{selectedInvoice.supplierInfo.nameAr}</Text>
+                  <Text style={styles.businessInfo}>{selectedInvoice.supplierInfo.name}</Text>
                   <Text style={styles.businessInfo}>{selectedInvoice.supplierInfo.addressAr}</Text>
+                  <Text style={styles.businessInfo}>{selectedInvoice.supplierInfo.address}</Text>
                   <Text style={styles.businessInfo}>{selectedInvoice.supplierInfo.phone}</Text>
+                  <Text style={styles.businessInfo}>{selectedInvoice.supplierInfo.email}</Text>
                   <Text style={styles.vatNumber}>الرقم الضريبي: {selectedInvoice.supplierInfo.vatNumber}</Text>
+                  <Text style={styles.vatNumber}>رقم السجل التجاري: {selectedInvoice.supplierInfo.crNumber}</Text>
                 </View>
 
                 <View style={styles.invoiceInfo}>

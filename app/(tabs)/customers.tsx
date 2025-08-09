@@ -8,11 +8,9 @@ import {
   Modal,
   Alert,
   Dimensions,
-  Share,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, DollarSign, CreditCard, Eye, UserPlus, X, Phone, Mail, MapPin, Building, TrendingUp, CreditCard as Edit, Trash2, Printer, FileText } from 'lucide-react-native';
+import { Plus, DollarSign, CreditCard, Eye, UserPlus, X, Phone, Mail, MapPin, User, TrendingUp, Edit, Trash2 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -22,7 +20,7 @@ import { Customer } from '@/types/global';
 const { width } = Dimensions.get('window');
 
 export default function Customers() {
-  const { theme, t, language, customers, addCustomer, updateCustomer, deleteCustomer, settings, payCustomerDebt } = useApp();
+  const { theme, t, language, customers, addCustomer, updateCustomer, deleteCustomer, payCustomerDebt, settings } = useApp();
   const [showSubMenu, setShowSubMenu] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -31,8 +29,7 @@ export default function Customers() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPayDebtModal, setShowPayDebtModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
-  const [selectedCustomerForDebt, setSelectedCustomerForDebt] = useState<Customer | null>(null);
-  const [paymentAmount, setPaymentAmount] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     nameAr: '',
@@ -42,6 +39,7 @@ export default function Customers() {
     addressAr: '',
     openingBalance: '',
   });
+  const [paymentAmount, setPaymentAmount] = useState('');
 
   const styles = StyleSheet.create({
     container: {
@@ -59,10 +57,6 @@ export default function Customers() {
       fontWeight: 'bold',
       color: '#FFFFFF',
       fontFamily: 'Cairo-Bold',
-    },
-    headerButtons: {
-      flexDirection: 'row',
-      gap: 10,
     },
     content: {
       flex: 1,
@@ -285,6 +279,26 @@ export default function Customers() {
     totalPurchases: {
       color: '#10B981',
     },
+    customerActions: {
+      flexDirection: 'row',
+      gap: 8,
+      alignItems: 'center',
+    },
+    editButton: {
+      padding: 8,
+      borderRadius: 8,
+      backgroundColor: '#5865F2' + '20',
+    },
+    deleteButton: {
+      padding: 8,
+      borderRadius: 8,
+      backgroundColor: '#EF4444' + '20',
+    },
+    payDebtButton: {
+      padding: 8,
+      borderRadius: 8,
+      backgroundColor: '#10B981' + '20',
+    },
   });
 
   const customerMenuItems = [
@@ -429,7 +443,6 @@ export default function Customers() {
           style: 'destructive',
           onPress: () => {
             deleteCustomer(customer.id);
-            setShowViewModal(false);
             Alert.alert('نجح', 'تم حذف العميل بنجاح');
           }
         },
@@ -438,29 +451,22 @@ export default function Customers() {
   };
 
   const handlePayDebt = () => {
-    if (!selectedCustomerForDebt || !paymentAmount) {
-      Alert.alert('خطأ', 'يرجى إدخال مبلغ السداد');
+    if (!selectedCustomer || !paymentAmount) {
+      Alert.alert('خطأ', 'يرجى إدخال مبلغ الدفع');
       return;
     }
 
     const amount = parseFloat(paymentAmount);
-    if (amount <= 0) {
-      Alert.alert('خطأ', 'مبلغ السداد يجب أن يكون أكبر من صفر');
+    if (amount <= 0 || amount > selectedCustomer.currentBalance) {
+      Alert.alert('خطأ', 'مبلغ الدفع غير صحيح');
       return;
     }
 
-    if (amount > selectedCustomerForDebt.currentBalance) {
-      Alert.alert('خطأ', 'مبلغ السداد لا يمكن أن يكون أكبر من الذمة المستحقة');
-      return;
-    }
-
-    payCustomerDebt(selectedCustomerForDebt.id, amount);
-    
-    Alert.alert('نجح', `تم سداد ${amount.toFixed(2)} ${settings.currencySymbol} من ذمة ${selectedCustomerForDebt.nameAr}`);
-    
-    setShowPayDebtModal(false);
-    setSelectedCustomerForDebt(null);
+    payCustomerDebt(selectedCustomer.id, amount);
     setPaymentAmount('');
+    setSelectedCustomer(null);
+    setShowPayDebtModal(false);
+    Alert.alert('نجح', 'تم تسجيل الدفع بنجاح');
   };
 
   const renderGridItems = () => {
@@ -481,7 +487,6 @@ export default function Customers() {
               <Text style={styles.itemTitle}>{item.title}</Text>
             </TouchableOpacity>
           ))}
-          {/* Fill empty space if odd number of items */}
           {customerMenuItems.slice(i, i + 2).length === 1 && (
             <View style={[styles.gridItem, { opacity: 0 }]} />
           )}
@@ -496,478 +501,10 @@ export default function Customers() {
   const totalPurchases = customers.reduce((sum, customer) => sum + customer.totalPurchases, 0);
   const customersWithDebts = customers.filter(customer => customer.currentBalance > 0);
 
-  const handlePrintAllCustomers = async () => {
-    const reportHTML = `
-      <!DOCTYPE html>
-      <html dir="rtl" lang="ar">
-        <head>
-          <meta charset="UTF-8">
-          <title>تقرير العملاء الشامل</title>
-          <style>
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-              direction: rtl; 
-              text-align: right; 
-              margin: 0;
-              padding: 20px;
-              background: #f5f5f5;
-            }
-            .report { 
-              max-width: 800px; 
-              margin: 0 auto; 
-              background: white;
-              padding: 30px;
-              border-radius: 10px;
-              box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            }
-            .header { 
-              text-align: center; 
-              border-bottom: 3px solid #5865F2; 
-              padding-bottom: 20px; 
-              margin-bottom: 30px; 
-            }
-            .header h1 { 
-              color: #5865F2; 
-              margin: 0; 
-              font-size: 28px;
-            }
-            .summary { 
-              background: #f8f9fa; 
-              padding: 20px; 
-              border-radius: 10px; 
-              margin-bottom: 30px; 
-              border: 1px solid #e0e0e0;
-            }
-            .summary h2 { 
-              color: #333; 
-              margin-bottom: 15px; 
-              text-align: center;
-            }
-            .summary-grid { 
-              display: grid; 
-              grid-template-columns: 1fr 1fr; 
-              gap: 15px; 
-            }
-            .summary-item { 
-              text-align: center; 
-              padding: 15px; 
-              background: white; 
-              border-radius: 8px; 
-              border: 1px solid #e0e0e0;
-            }
-            .summary-value { 
-              font-size: 24px; 
-              font-weight: bold; 
-              color: #5865F2; 
-              margin-bottom: 5px;
-            }
-            .summary-label { 
-              color: #666; 
-              font-size: 14px;
-            }
-            .customers-table { 
-              width: 100%; 
-              border-collapse: collapse; 
-              margin-bottom: 30px; 
-            }
-            .customers-table th, .customers-table td { 
-              border: 1px solid #ddd; 
-              padding: 12px; 
-              text-align: center; 
-            }
-            .customers-table th { 
-              background: #5865F2; 
-              color: white; 
-              font-weight: bold; 
-            }
-            .customers-table tr:nth-child(even) { 
-              background: #f9f9f9; 
-            }
-            .debt-amount { 
-              color: #EF4444; 
-              font-weight: bold; 
-            }
-            .no-debt { 
-              color: #10B981; 
-            }
-            .section-title { 
-              color: #333; 
-              font-size: 20px; 
-              margin: 30px 0 15px; 
-              border-bottom: 2px solid #e0e0e0; 
-              padding-bottom: 10px;
-            }
-            .footer { 
-              text-align: center; 
-              margin-top: 30px; 
-              color: #666; 
-              font-size: 14px; 
-              border-top: 1px solid #e0e0e0; 
-              padding-top: 20px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="report">
-            <div class="header">
-              <h1>${settings.businessNameAr}</h1>
-              <div>${settings.businessAddressAr}</div>
-              <div>هاتف: ${settings.businessPhone}</div>
-              <div>بريد إلكتروني: ${settings.businessEmail}</div>
-            </div>
-
-            <div class="summary">
-              <h2>ملخص العملاء</h2>
-              <div class="summary-grid">
-                <div class="summary-item">
-                  <div class="summary-value">${totalCustomers}</div>
-                  <div class="summary-label">إجمالي العملاء</div>
-                </div>
-                <div class="summary-item">
-                  <div class="summary-value">${totalPurchases.toFixed(2)} ${settings.currencySymbol}</div>
-                  <div class="summary-label">إجمالي المشتريات</div>
-                </div>
-                <div class="summary-item">
-                  <div class="summary-value">${totalDebts.toFixed(2)} ${settings.currencySymbol}</div>
-                  <div class="summary-label">إجمالي الذمم</div>
-                </div>
-                <div class="summary-item">
-                  <div class="summary-value">${totalCustomers > 0 ? (totalPurchases / totalCustomers).toFixed(2) : '0.00'} ${settings.currencySymbol}</div>
-                  <div class="summary-label">متوسط المشتريات</div>
-                </div>
-              </div>
-            </div>
-
-            <h3 class="section-title">قائمة العملاء التفصيلية</h3>
-            <table class="customers-table">
-              <thead>
-                <tr>
-                  <th>اسم العميل</th>
-                  <th>رقم الهاتف</th>
-                  <th>البريد الإلكتروني</th>
-                  <th>إجمالي المشتريات</th>
-                  <th>الرصيد الحالي</th>
-                  <th>الحالة</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${customers.map(customer => `
-                  <tr>
-                    <td>${customer.nameAr}</td>
-                    <td>${customer.phone}</td>
-                    <td>${customer.email || '-'}</td>
-                    <td>${customer.totalPurchases.toFixed(2)} ${settings.currencySymbol}</td>
-                    <td class="${customer.currentBalance > 0 ? 'debt-amount' : 'no-debt'}">
-                      ${customer.currentBalance.toFixed(2)} ${settings.currencySymbol}
-                    </td>
-                    <td class="${customer.currentBalance > 0 ? 'debt-amount' : 'no-debt'}">
-                      ${customer.currentBalance > 0 ? 'مدين' : 'سليم'}
-                    </td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-
-            ${customersWithDebts.length > 0 ? `
-              <h3 class="section-title">العملاء المدينون (${customersWithDebts.length})</h3>
-              <table class="customers-table">
-                <thead>
-                  <tr>
-                    <th>اسم العميل</th>
-                    <th>رقم الهاتف</th>
-                    <th>مبلغ الذمة</th>
-                    <th>إجمالي المشتريات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${customersWithDebts.map(customer => `
-                    <tr>
-                      <td>${customer.nameAr}</td>
-                      <td>${customer.phone}</td>
-                      <td class="debt-amount">${customer.currentBalance.toFixed(2)} ${settings.currencySymbol}</td>
-                      <td>${customer.totalPurchases.toFixed(2)} ${settings.currencySymbol}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            ` : ''}
-
-            <div class="footer">
-              <div><strong>تاريخ التقرير:</strong> ${new Date().toLocaleDateString('ar-SA', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              })}</div>
-              <div style="margin-top: 10px;">${settings.receiptFooterAr}</div>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-
-    const reportText = `
-تقرير العملاء الشامل
-==================
-
-${settings.businessNameAr}
-${settings.businessAddressAr}
-${settings.businessPhone}
-
-ملخص العملاء:
-============
-إجمالي العملاء: ${totalCustomers}
-إجمالي المشتريات: ${totalPurchases.toFixed(2)} ${settings.currencySymbol}
-إجمالي الذمم: ${totalDebts.toFixed(2)} ${settings.currencySymbol}
-متوسط المشتريات: ${totalCustomers > 0 ? (totalPurchases / totalCustomers).toFixed(2) : '0.00'} ${settings.currencySymbol}
-
-قائمة العملاء:
-=============
-${customers.map(customer => `
-العميل: ${customer.nameAr}
-الهاتف: ${customer.phone}
-البريد: ${customer.email || '-'}
-إجمالي المشتريات: ${customer.totalPurchases.toFixed(2)} ${settings.currencySymbol}
-الرصيد الحالي: ${customer.currentBalance.toFixed(2)} ${settings.currencySymbol}
-الحالة: ${customer.currentBalance > 0 ? 'مدين' : 'سليم'}
--------------------`).join('\n')}
-
-${customersWithDebts.length > 0 ? `
-العملاء المدينون (${customersWithDebts.length}):
-========================
-${customersWithDebts.map(customer => `
-${customer.nameAr} - ${customer.phone}
-مبلغ الذمة: ${customer.currentBalance.toFixed(2)} ${settings.currencySymbol}
-إجمالي المشتريات: ${customer.totalPurchases.toFixed(2)} ${settings.currencySymbol}
--------------------`).join('\n')}
-` : ''}
-
-تاريخ التقرير: ${new Date().toLocaleDateString('ar-SA')}
-${settings.receiptFooterAr}
-    `;
-
-    if (Platform.OS === 'web') {
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(reportHTML);
-        printWindow.document.close();
-        printWindow.print();
-      }
-    } else {
-      try {
-        await Share.share({
-          message: reportText,
-          title: 'تقرير العملاء الشامل',
-        });
-      } catch (error) {
-        Alert.alert('خطأ', 'فشل في مشاركة التقرير');
-      }
-    }
-  };
-
-  const handlePrintSingleCustomer = async (customer: Customer) => {
-    const customerHTML = `
-      <!DOCTYPE html>
-      <html dir="rtl" lang="ar">
-        <head>
-          <meta charset="UTF-8">
-          <title>بيانات العميل - ${customer.nameAr}</title>
-          <style>
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-              direction: rtl; 
-              text-align: right; 
-              margin: 0;
-              padding: 20px;
-              background: #f5f5f5;
-            }
-            .customer-report { 
-              max-width: 600px; 
-              margin: 0 auto; 
-              background: white;
-              padding: 30px;
-              border-radius: 10px;
-              box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            }
-            .header { 
-              text-align: center; 
-              border-bottom: 3px solid #5865F2; 
-              padding-bottom: 20px; 
-              margin-bottom: 30px; 
-            }
-            .header h1 { 
-              color: #5865F2; 
-              margin: 0; 
-              font-size: 24px;
-            }
-            .customer-info { 
-              background: #f8f9fa; 
-              padding: 20px; 
-              border-radius: 10px; 
-              margin-bottom: 20px; 
-            }
-            .info-row { 
-              display: flex; 
-              justify-content: space-between; 
-              margin-bottom: 10px; 
-              padding: 8px 0;
-              border-bottom: 1px solid #eee;
-            }
-            .info-label { 
-              font-weight: bold; 
-              color: #333; 
-            }
-            .info-value { 
-              color: #666; 
-            }
-            .debt-value { 
-              color: #EF4444; 
-              font-weight: bold; 
-            }
-            .no-debt { 
-              color: #10B981; 
-              font-weight: bold; 
-            }
-            .footer { 
-              text-align: center; 
-              margin-top: 30px; 
-              color: #666; 
-              font-size: 14px; 
-              border-top: 1px solid #e0e0e0; 
-              padding-top: 20px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="customer-report">
-            <div class="header">
-              <h1>بيانات العميل</h1>
-              <div>${settings.businessNameAr}</div>
-              <div>${settings.businessAddressAr}</div>
-              <div>هاتف: ${settings.businessPhone}</div>
-            </div>
-
-            <div class="customer-info">
-              <div class="info-row">
-                <span class="info-value">${customer.nameAr}</span>
-                <span class="info-label">اسم العميل:</span>
-              </div>
-              <div class="info-row">
-                <span class="info-value">${customer.phone}</span>
-                <span class="info-label">رقم الهاتف:</span>
-              </div>
-              ${customer.email ? `
-                <div class="info-row">
-                  <span class="info-value">${customer.email}</span>
-                  <span class="info-label">البريد الإلكتروني:</span>
-                </div>
-              ` : ''}
-              ${customer.addressAr ? `
-                <div class="info-row">
-                  <span class="info-value">${customer.addressAr}</span>
-                  <span class="info-label">العنوان:</span>
-                </div>
-              ` : ''}
-              <div class="info-row">
-                <span class="info-value">${customer.totalPurchases.toFixed(2)} ${settings.currencySymbol}</span>
-                <span class="info-label">إجمالي المشتريات:</span>
-              </div>
-              <div class="info-row">
-                <span class="info-value">${customer.openingBalance.toFixed(2)} ${settings.currencySymbol}</span>
-                <span class="info-label">الرصيد الافتتاحي:</span>
-              </div>
-              <div class="info-row">
-                <span class="info-value ${customer.currentBalance > 0 ? 'debt-value' : 'no-debt'}">
-                  ${customer.currentBalance.toFixed(2)} ${settings.currencySymbol}
-                </span>
-                <span class="info-label">الرصيد الحالي:</span>
-              </div>
-              <div class="info-row">
-                <span class="info-value ${customer.currentBalance > 0 ? 'debt-value' : 'no-debt'}">
-                  ${customer.currentBalance > 0 ? 'مدين' : 'سليم'}
-                </span>
-                <span class="info-label">حالة الحساب:</span>
-              </div>
-              <div class="info-row">
-                <span class="info-value">${customer.createdAt.toLocaleDateString('ar-SA')}</span>
-                <span class="info-label">تاريخ التسجيل:</span>
-              </div>
-            </div>
-
-            <div class="footer">
-              <div><strong>تاريخ الطباعة:</strong> ${new Date().toLocaleDateString('ar-SA', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              })}</div>
-              <div style="margin-top: 10px;">${settings.receiptFooterAr}</div>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-
-    const customerText = `
-بيانات العميل
-============
-
-${settings.businessNameAr}
-${settings.businessAddressAr}
-${settings.businessPhone}
-
-معلومات العميل:
-===============
-اسم العميل: ${customer.nameAr}
-رقم الهاتف: ${customer.phone}
-البريد الإلكتروني: ${customer.email || '-'}
-العنوان: ${customer.addressAr || '-'}
-
-المعلومات المالية:
-==================
-إجمالي المشتريات: ${customer.totalPurchases.toFixed(2)} ${settings.currencySymbol}
-الرصيد الافتتاحي: ${customer.openingBalance.toFixed(2)} ${settings.currencySymbol}
-الرصيد الحالي: ${customer.currentBalance.toFixed(2)} ${settings.currencySymbol}
-حالة الحساب: ${customer.currentBalance > 0 ? 'مدين' : 'سليم'}
-تاريخ التسجيل: ${customer.createdAt.toLocaleDateString('ar-SA')}
-
-تاريخ الطباعة: ${new Date().toLocaleDateString('ar-SA')}
-${settings.receiptFooterAr}
-    `;
-
-    if (Platform.OS === 'web') {
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(customerHTML);
-        printWindow.document.close();
-        printWindow.print();
-      }
-    } else {
-      try {
-        await Share.share({
-          message: customerText,
-          title: `بيانات العميل - ${customer.nameAr}`,
-        });
-      } catch (error) {
-        Alert.alert('خطأ', 'فشل في مشاركة بيانات العميل');
-      }
-    }
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>العملاء</Text>
-        <View style={styles.headerButtons}>
-          <Button
-            title="طباعة التقرير"
-            onPress={handlePrintAllCustomers}
-            icon={<FileText size={16} color="#FFFFFF" />}
-            size="small"
-          />
-        </View>
       </View>
       
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -1006,7 +543,7 @@ ${settings.receiptFooterAr}
                 value={formData.name}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
                 placeholder="Customer Name"
-                icon={<Building size={20} color="#666" />}
+                icon={<User size={20} color="#666" />}
               />
 
               <Input
@@ -1014,7 +551,7 @@ ${settings.receiptFooterAr}
                 value={formData.nameAr}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, nameAr: text }))}
                 placeholder="اسم العميل"
-                icon={<Building size={20} color="#666" />}
+                icon={<User size={20} color="#666" />}
               />
 
               <Input
@@ -1093,7 +630,6 @@ ${settings.receiptFooterAr}
             </View>
 
             <ScrollView style={{ maxHeight: 400 }}>
-              {/* Summary Card */}
               <Card style={styles.summaryCard}>
                 <Text style={styles.summaryTitle}>ملخص العملاء</Text>
                 <View style={styles.summaryRow}>
@@ -1123,75 +659,37 @@ ${settings.receiptFooterAr}
                   <Card key={customer.id} style={styles.customerCard}>
                     <View style={styles.customerHeader}>
                       <Text style={styles.customerName}>{customer.nameAr}</Text>
-                      <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                      <View style={styles.customerActions}>
                         {customer.currentBalance > 0 && (
                           <View style={styles.customerBadge}>
                             <Text style={styles.customerBadgeText}>ذمة</Text>
                           </View>
                         )}
+                        {customer.currentBalance > 0 && (
+                          <TouchableOpacity
+                            style={styles.payDebtButton}
+                            onPress={() => {
+                              setSelectedCustomer(customer);
+                              setShowPayDebtModal(true);
+                            }}
+                          >
+                            <DollarSign size={16} color="#10B981" />
+                          </TouchableOpacity>
+                        )}
                         <TouchableOpacity
-                          style={{ padding: 8, borderRadius: 8, backgroundColor: '#5865F2' + '20' }}
+                          style={styles.editButton}
                           onPress={() => handleEditCustomer(customer)}
                         >
                           <Edit size={16} color="#5865F2" />
                         </TouchableOpacity>
                         <TouchableOpacity
-                          style={{ padding: 8, borderRadius: 8, backgroundColor: '#10B981' + '20' }}
-                          onPress={() => handlePrintSingleCustomer(customer)}
-                        >
-                          <Printer size={16} color="#10B981" />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={{ padding: 8, borderRadius: 8, backgroundColor: '#EF4444' + '20' }}
+                          style={styles.deleteButton}
                           onPress={() => handleDeleteCustomer(customer)}
                         >
                           <Trash2 size={16} color="#EF4444" />
                         </TouchableOpacity>
                       </View>
                     </View>
-                    
-                    {/* زر سداد الذمة الكبير والواضح */}
-                    {customer.currentBalance > 0 && (
-                      <TouchableOpacity
-                        style={{
-                          backgroundColor: '#10B981',
-                          paddingVertical: 16,
-                          paddingHorizontal: 20,
-                          borderRadius: 12,
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: 8,
-                          marginBottom: 16,
-                          shadowColor: '#10B981',
-                          shadowOffset: { width: 0, height: 2 },
-                          shadowOpacity: 0.3,
-                          shadowRadius: 4,
-                          elevation: 4,
-                        }}
-                        onPress={() => {
-                          setSelectedCustomerForDebt(customer);
-                          setShowPayDebtModal(true);
-                        }}
-                      >
-                        <Text style={{
-                          color: '#FFFFFF',
-                          fontSize: 16,
-                          fontWeight: 'bold',
-                          fontFamily: 'Cairo-Bold',
-                        }}>
-                          سداد
-                        </Text>
-                        <Text style={{
-                          color: '#FFFFFF',
-                          fontSize: 18,
-                          fontWeight: 'bold',
-                          fontFamily: 'Cairo-Bold',
-                        }}>
-                          سداد الذمة ({customer.currentBalance.toFixed(2)} {settings.currencySymbol})
-                        </Text>
-                      </TouchableOpacity>
-                    )}
                     
                     <View style={styles.customerInfo}>
                       <Text style={styles.customerInfoText}>{customer.phone}</Text>
@@ -1275,50 +773,21 @@ ${settings.receiptFooterAr}
                   {customersWithDebts.map((customer) => (
                     <Card key={customer.id} style={styles.customerCard}>
                       <View style={styles.customerHeader}>
-                        <View style={{ flex: 1 }}>
-                          <Text style={styles.customerName}>{customer.nameAr}</Text>
-                          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', marginTop: 8 }}>
-                            <View style={[styles.customerBadge, { backgroundColor: '#EF4444' }]}>
-                              <Text style={styles.customerBadgeText}>
-                                {customer.currentBalance.toFixed(2)} {settings.currencySymbol}
-                              </Text>
-                            </View>
-                            <TouchableOpacity
-                              style={{ 
-                                padding: 10, 
-                                borderRadius: 8, 
-                                backgroundColor: '#10B981',
-                                minWidth: 40,
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}
-                              onPress={() => {
-                                setSelectedCustomerForDebt(customer);
-                                setShowPayDebtModal(true);
-                              }}
-                            >
-                              <Text style={{
-                                color: '#FFFFFF',
-                                fontSize: 12,
-                                fontWeight: 'bold',
-                                fontFamily: 'Cairo-Bold',
-                              }}>
-                                سداد
-                              </Text>
-                            </TouchableOpacity>
+                        <Text style={styles.customerName}>{customer.nameAr}</Text>
+                        <View style={styles.customerActions}>
+                          <View style={[styles.customerBadge, { backgroundColor: '#EF4444' }]}>
+                            <Text style={styles.customerBadgeText}>
+                              {customer.currentBalance.toFixed(2)} {settings.currencySymbol}
+                            </Text>
                           </View>
                           <TouchableOpacity
-                            style={{ 
-                              padding: 10, 
-                              borderRadius: 8, 
-                              backgroundColor: '#10B981',
-                              minWidth: 40,
-                              alignItems: 'center',
-                              justifyContent: 'center'
+                            style={styles.payDebtButton}
+                            onPress={() => {
+                              setSelectedCustomer(customer);
+                              setShowPayDebtModal(true);
                             }}
-                            onPress={() => handlePrintSingleCustomer(customer)}
                           >
-                            <Printer size={16} color="#FFFFFF" />
+                            <DollarSign size={16} color="#10B981" />
                           </TouchableOpacity>
                         </View>
                       </View>
@@ -1405,7 +874,7 @@ ${settings.receiptFooterAr}
                 value={formData.name}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
                 placeholder="Customer Name"
-                icon={<Building size={20} color="#666" />}
+                icon={<User size={20} color="#666" />}
               />
 
               <Input
@@ -1413,7 +882,7 @@ ${settings.receiptFooterAr}
                 value={formData.nameAr}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, nameAr: text }))}
                 placeholder="اسم العميل"
-                icon={<Building size={20} color="#666" />}
+                icon={<User size={20} color="#666" />}
               />
 
               <Input
@@ -1485,32 +954,31 @@ ${settings.receiptFooterAr}
               <Text style={styles.modalTitle}>سداد ذمة العميل</Text>
               <TouchableOpacity 
                 style={styles.closeButton}
-                onPress={() => {
-                  setShowPayDebtModal(false);
-                  setSelectedCustomerForDebt(null);
-                  setPaymentAmount('');
-                }}
+                onPress={() => setShowPayDebtModal(false)}
               >
                 <X size={24} color="#666" />
               </TouchableOpacity>
             </View>
 
-            {selectedCustomerForDebt && (
+            {selectedCustomer && (
               <>
-                <View style={{ backgroundColor: '#F8F9FA', padding: 16, borderRadius: 12, marginBottom: 16 }}>
-                  <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#333', textAlign: 'right', marginBottom: 8 }}>
-                    العميل: {selectedCustomerForDebt.nameAr}
+                <View style={{ backgroundColor: '#F8F9FA', padding: 16, borderRadius: 8, marginBottom: 16 }}>
+                  <Text style={{ fontSize: 16, fontWeight: 'bold', textAlign: 'right', marginBottom: 8 }}>
+                    العميل: {selectedCustomer.nameAr}
                   </Text>
-                  <Text style={{ fontSize: 14, color: '#EF4444', fontWeight: 'bold', textAlign: 'right' }}>
-                    الذمة المستحقة: {selectedCustomerForDebt.currentBalance.toFixed(2)} {settings.currencySymbol}
+                  <Text style={{ fontSize: 14, color: '#666', textAlign: 'right', marginBottom: 4 }}>
+                    الهاتف: {selectedCustomer.phone}
+                  </Text>
+                  <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#EF4444', textAlign: 'right' }}>
+                    إجمالي الذمة: {selectedCustomer.currentBalance.toFixed(2)} {settings.currencySymbol}
                   </Text>
                 </View>
 
                 <Input
-                  label="مبلغ السداد *"
+                  label="مبلغ الدفع"
                   value={paymentAmount}
                   onChangeText={setPaymentAmount}
-                  placeholder={`الحد الأقصى: ${selectedCustomerForDebt.currentBalance.toFixed(2)}`}
+                  placeholder={selectedCustomer.currentBalance.toFixed(2)}
                   keyboardType="numeric"
                   icon={<DollarSign size={20} color="#666" />}
                 />
@@ -1518,19 +986,14 @@ ${settings.receiptFooterAr}
                 <View style={styles.modalButtons}>
                   <Button
                     title="إلغاء"
-                    onPress={() => {
-                      setShowPayDebtModal(false);
-                      setSelectedCustomerForDebt(null);
-                      setPaymentAmount('');
-                    }}
+                    onPress={() => setShowPayDebtModal(false)}
                     variant="outline"
                     style={styles.modalButton}
                   />
                   <Button
-                    title="سداد"
+                    title="تسجيل الدفع"
                     onPress={handlePayDebt}
                     style={styles.modalButton}
-                    icon={<DollarSign size={16} color="#FFFFFF" />}
                   />
                 </View>
               </>

@@ -596,6 +596,28 @@ ${settings.receiptFooterAr}
     );
   };
 
+  const handleDeleteSale = (sale: Sale) => {
+    Alert.alert(
+      'تأكيد الحذف',
+      `هل أنت متأكد من حذف الفاتورة ${sale.invoiceNumber}؟`,
+      [
+        { text: 'إلغاء', style: 'cancel' },
+        { 
+          text: 'حذف', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteSale(sale.id);
+              Alert.alert('نجح', 'تم حذف الفاتورة بنجاح');
+            } catch (error) {
+              Alert.alert('خطأ', 'فشل في حذف الفاتورة');
+            }
+          }
+        },
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -714,6 +736,14 @@ ${settings.receiptFooterAr}
                       onPress={() => handleReturnSale(sale)}
                     />
                   )}
+                  <Button
+                    title="حذف"
+                    variant="ghost"
+                    size="small"
+                    style={styles.actionButton}
+                    icon={<X size={16} color="#EF4444" />}
+                    onPress={() => handleDeleteSale(sale)}
+                  />
                 </View>
               </Card>
             ))}
