@@ -1005,6 +1005,7 @@ export default function Inventory() {
                 style={styles.closeButton}
                 onPress={() => setShowBarcodeModal(false)}
               >
+              >
                 <X size={24} color="#666" />
               </TouchableOpacity>
             </View>
