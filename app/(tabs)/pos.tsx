@@ -681,7 +681,6 @@ export default function POS() {
                   </Text>
                   <TouchableOpacity
                     onPress={() => addToCart(product)}
-                  >
                     style={styles.addButton}
                     onPress={() => addToCart(product)}
                   >
